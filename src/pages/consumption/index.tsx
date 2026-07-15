@@ -4,8 +4,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { consumptionMonths, invoices } from "@/data/portalData";
-import { useMemo, useState } from "react";
+import { selectUser } from "@/pages/auth/features/authSlice";
+import { fetchPortalConsumption } from "@/pages/portalClient/services";
+import type { PortalConsumptionResponse } from "@/pages/portalClient/types";
+import { useAppSelector } from "@/store/hooks";
+import { useEffect, useMemo, useState } from "react";
 import Select, { type SingleValue, type StylesConfig } from "react-select";
 import {
   FiBarChart2,
@@ -19,7 +22,6 @@ import {
   FiFeather,
   FiZap,
 } from "react-icons/fi";
-import { LuFlame } from "react-icons/lu";
 import {
   Bar,
   BarChart,
@@ -77,26 +79,68 @@ const selectStyles: StylesConfig<RangeSelectOption, false> = {
 
 const ConsumptionPage = () => {
   const navigate = useNavigate();
+  const user = useAppSelector(selectUser);
+  const cups = Array.isArray(user.cups) ? user.cups[0] : undefined;
   const [range, setRange] = useState<RangeOption>(12);
   const [selectedMonth, setSelectedMonth] = useState<string>("FEB");
+  const [data, setData] = useState<PortalConsumptionResponse | null>(null);
+  const [loading, setLoading] = useState(false);
   const visibleMonths = useMemo(
     () =>
-      consumptionMonths.slice(range === 6 ? -6 : 0).map((item) => ({
+      (data?.months ?? []).slice(range === 6 ? -6 : 0).map((item) => ({
         ...item,
-        total: item.peak + item.flat + item.valley,
+        total: item.total ?? item.peak + item.flat + item.valley,
       })),
-    [range],
+    [data?.months, range],
   );
   const selectedData =
     visibleMonths.find((item) => item.month === selectedMonth) ?? visibleMonths[0];
   const averageConsumption =
-    visibleMonths.reduce((sum, item) => sum + item.total, 0) / visibleMonths.length;
+    visibleMonths.length > 0
+      ? visibleMonths.reduce((sum, item) => sum + item.total, 0) /
+        visibleMonths.length
+      : 0;
   const peakAverage =
-    visibleMonths.reduce((sum, item) => sum + item.peak, 0) / visibleMonths.length;
+    visibleMonths.length > 0
+      ? visibleMonths.reduce((sum, item) => sum + item.peak, 0) /
+        visibleMonths.length
+      : 0;
   const flatAverage =
-    visibleMonths.reduce((sum, item) => sum + item.flat, 0) / visibleMonths.length;
+    visibleMonths.length > 0
+      ? visibleMonths.reduce((sum, item) => sum + item.flat, 0) /
+        visibleMonths.length
+      : 0;
   const valleyAverage =
-    visibleMonths.reduce((sum, item) => sum + item.valley, 0) / visibleMonths.length;
+    visibleMonths.length > 0
+      ? visibleMonths.reduce((sum, item) => sum + item.valley, 0) /
+        visibleMonths.length
+      : 0;
+
+  useEffect(() => {
+    let active = true;
+
+    const loadConsumption = async () => {
+      setLoading(true);
+
+      try {
+        const response = await fetchPortalConsumption({ cups });
+        if (active) setData(response);
+      } catch {
+        if (active) {
+          setData(null);
+          toast.error("No pudimos cargar tu consumo eléctrico.");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    loadConsumption();
+
+    return () => {
+      active = false;
+    };
+  }, [cups]);
 
   const formatKwh = (value: number) =>
     value.toLocaleString("es-ES", {
@@ -186,7 +230,8 @@ const ConsumptionPage = () => {
                 {formatKwh(averageConsumption)} <span className="text-3xl">kWh</span>
               </p>
               <p className="mt-3 text-lg text-gray-600">
-                Consumo medio <FiInfo className="inline" />
+                {loading ? "Cargando consumo..." : "Consumo medio"}{" "}
+                <FiInfo className="inline" />
               </p>
             </div>
             <div className="grid grid-cols-3 gap-3 md:gap-4">
@@ -208,27 +253,43 @@ const ConsumptionPage = () => {
 
           <div className="mt-6 rounded-xl bg-[#fbfdff] p-2 md:p-4">
             <p className="mb-3 text-sm font-semibold text-[#07133d]">
-              Mes seleccionado: {selectedData.month} · {formatKwh(selectedData.total)} kWh
+              {selectedData
+                ? `Mes seleccionado: ${selectedData.month} · ${formatKwh(
+                    selectedData.total,
+                  )} kWh`
+                : "Sin consumos eléctricos para el periodo"}
             </p>
             <div className="h-72 md:h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={visibleMonths} onClick={handleMonthClick}>
-                  <CartesianGrid vertical={false} stroke="#edf2f7" />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                  <YAxis tickLine={false} axisLine={false} width={36} />
-                  <ChartTooltip
-                    cursor={{ fill: "rgba(11,130,223,0.06)" }}
-                    formatter={(value: number, name: string) => [
-                      `${formatKwh(value)} kWh`,
-                      name === "peak" ? "Punta" : name === "flat" ? "Llano" : "Valle",
-                    ]}
-                    labelFormatter={(label) => `Mes ${label}`}
-                  />
-                  <Bar dataKey="peak" stackId="energy" fill="#0b82df" radius={[0, 0, 8, 8]} />
-                  <Bar dataKey="flat" stackId="energy" fill="#36b6f5" />
-                  <Bar dataKey="valley" stackId="energy" fill="#cfe9ff" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {visibleMonths.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={visibleMonths} onClick={handleMonthClick}>
+                    <CartesianGrid vertical={false} stroke="#edf2f7" />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                    <YAxis tickLine={false} axisLine={false} width={36} />
+                    <ChartTooltip
+                      cursor={{ fill: "rgba(11,130,223,0.06)" }}
+                      formatter={(value: number, name: string) => [
+                        `${formatKwh(value)} kWh`,
+                        name === "peak"
+                          ? "Punta"
+                          : name === "flat"
+                            ? "Llano"
+                            : "Valle",
+                      ]}
+                      labelFormatter={(label) => `Mes ${label}`}
+                    />
+                    <Bar dataKey="peak" stackId="energy" fill="#0b82df" radius={[0, 0, 8, 8]} />
+                    <Bar dataKey="flat" stackId="energy" fill="#36b6f5" />
+                    <Bar dataKey="valley" stackId="energy" fill="#cfe9ff" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-gray-200 text-center text-gray-500">
+                  {loading
+                    ? "Consultando BOMP..."
+                    : "Aún no hay consumo eléctrico disponible."}
+                </div>
+              )}
             </div>
           </div>
         </article>
@@ -239,8 +300,8 @@ const ConsumptionPage = () => {
               Últimas facturas <span className="text-base font-normal text-gray-400">IVA incl.</span>
             </h2>
           </div>
-          {invoices.slice(0, 3).map((invoice) => {
-            const Icon = invoice.concept === "Gas" ? LuFlame : FiZap;
+          {(data?.invoices ?? []).slice(0, 3).map((invoice) => {
+            const Icon = FiZap;
             return (
               <button
                 key={invoice.id}
@@ -252,13 +313,18 @@ const ConsumptionPage = () => {
                 <Icon className="h-8 w-8 text-amber-500" />
                 <div className="min-w-0 flex-1">
                   <h3 className="font-bold text-[#07133d]">{invoice.title}</h3>
-                  <p className="text-sm text-gray-500">{invoice.date}</p>
+                  <p className="text-sm text-gray-500">{invoice.period}</p>
                 </div>
-                <p className="text-3xl text-[#17446f]">{invoice.amount}</p>
+                <p className="text-3xl text-[#17446f]">{invoice.amountLabel}</p>
                 <FiChevronRight className="h-6 w-6 text-gray-500" />
               </button>
             );
           })}
+          {!loading && (data?.invoices ?? []).length === 0 && (
+            <div className="p-7 text-gray-500">
+              No hay facturas eléctricas disponibles.
+            </div>
+          )}
           <button
             onClick={() => navigate("/facturas")}
             className="h-16 w-full font-bold text-[#0b82df] transition hover:bg-[#eef6ff] hover:text-[#076fc0] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15"

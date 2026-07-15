@@ -3,11 +3,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { customer, invoices } from "@/data/portalData";
+import { customer } from "@/data/portalData";
 import { selectUser } from "@/pages/auth/features/authSlice";
+import {
+  downloadPortalInvoicePdf,
+  fetchPortalInvoices,
+} from "@/pages/portalClient/services";
+import type { PortalInvoice } from "@/pages/portalClient/types";
 import { useAppSelector } from "@/store/hooks";
 import { downloadTextFile } from "@/utils/portalActions";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Select, { type SingleValue, type StylesConfig } from "react-select";
 import {
   FiCalendar,
@@ -20,7 +25,6 @@ import {
   FiChevronRight,
   FiZap,
 } from "react-icons/fi";
-import { LuFlame } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -129,24 +133,44 @@ const InvoicesPage = () => {
   const [endDate, setEndDate] = useState("2024-05-04");
   const [activeTab, setActiveTab] = useState<InvoiceTab>("invoices");
   const [showConfig, setShowConfig] = useState(false);
+  const [invoices, setInvoices] = useState<PortalInvoice[]>([]);
+  const [loading, setLoading] = useState(false);
   const selectedSupply =
     supplyOptions.find((option) => option.value === supplyFilter) ??
     supplyOptions[0];
 
-  const filteredInvoices = useMemo(() => {
-    const toIsoDate = (date: string) => {
-      const [day, month, year] = date.split("/");
-      return `${year}-${month}-${day}`;
+  useEffect(() => {
+    let active = true;
+
+    const loadInvoices = async () => {
+      setLoading(true);
+
+      try {
+        const response = await fetchPortalInvoices({
+          cups: selectedSupply?.value,
+          dateFrom: startDate,
+          dateTo: endDate,
+          status: statusFilter,
+        });
+        if (active) setInvoices(response.invoices);
+      } catch {
+        if (active) {
+          setInvoices([]);
+          toast.error("No pudimos cargar tus facturas eléctricas.");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
     };
 
-    return invoices.filter((invoice) => {
-      const invoiceDate = toIsoDate(invoice.date);
-      const matchesStatus =
-        statusFilter === "Todos los estados" || invoice.status === statusFilter;
-      const matchesPeriod = invoiceDate >= startDate && invoiceDate <= endDate;
-      return matchesStatus && matchesPeriod;
-    });
-  }, [endDate, startDate, statusFilter]);
+    loadInvoices();
+
+    return () => {
+      active = false;
+    };
+  }, [endDate, selectedSupply?.value, startDate, statusFilter]);
+
+  const filteredInvoices = invoices;
 
   const exportInvoices = () => {
     const csv = [
@@ -154,10 +178,10 @@ const InvoicesPage = () => {
       ...filteredInvoices.map((invoice) =>
         [
           invoice.id,
-          invoice.date,
+          invoice.invoiceDate,
           invoice.concept,
           invoice.period,
-          invoice.amount,
+          invoice.amountLabel,
           invoice.status,
         ].join(","),
       ),
@@ -167,18 +191,33 @@ const InvoicesPage = () => {
     toast.success("Exportación generada");
   };
 
-  const downloadInvoice = (invoiceId: string) => {
-    const invoice = invoices.find((item) => item.id === invoiceId);
+  const downloadInvoice = async (invoiceId: string) => {
+    const invoice = filteredInvoices.find((item) => item.id === invoiceId);
     if (!invoice) return;
-    downloadTextFile(
-      `factura-${invoice.id}.txt`,
-      `ENERGYASSET\nFactura ${invoice.id}\n${invoice.title}\nFecha: ${invoice.date}\nPeriodo: ${invoice.period}\nImporte: ${invoice.amount}\nEstado: ${invoice.status}`,
-    );
-    toast.success(`Factura ${invoice.id} descargada`);
+
+    try {
+      const blob = await downloadPortalInvoicePdf(invoiceId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `factura-${invoice.id}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Factura ${invoice.id} descargada`);
+    } catch {
+      toast.error("No pudimos descargar el PDF de la factura.");
+    }
   };
 
-  const openInvoice = (invoiceId: string) => {
-    toast.info(`Abriendo vista previa de factura ${invoiceId}`);
+  const openInvoice = async (invoiceId: string) => {
+    try {
+      const blob = await downloadPortalInvoicePdf(invoiceId);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 30000);
+    } catch {
+      toast.error("No pudimos abrir la factura.");
+    }
   };
 
   return (
@@ -335,8 +374,13 @@ const InvoicesPage = () => {
           {activeTab === "invoices" ? (
             <>
             <div className="md:hidden">
+              {loading && (
+                <div className="border-t border-gray-100 p-6 text-gray-500">
+                  Consultando facturas eléctricas...
+                </div>
+              )}
               {filteredInvoices.map((invoice) => {
-                const Icon = invoice.concept === "Gas" ? LuFlame : FiZap;
+                const Icon = FiZap;
                 return (
                   <button
                     key={invoice.id}
@@ -350,16 +394,25 @@ const InvoicesPage = () => {
                       <span className="block font-bold text-[#07133d]">
                         {invoice.title}
                       </span>
-                      <span className="mt-1 block text-gray-500">{invoice.date}</span>
+                      <span className="mt-1 block text-gray-500">
+                        {invoice.period}
+                      </span>
                       <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-600">
                         {invoice.status}
                       </span>
                     </span>
-                    <span className="text-3xl text-[#17446f]">{invoice.amount}</span>
+                    <span className="text-3xl text-[#17446f]">
+                      {invoice.amountLabel}
+                    </span>
                     <FiChevronRight className="h-6 w-6 text-gray-500" />
                   </button>
                 );
               })}
+              {!loading && filteredInvoices.length === 0 && (
+                <div className="border-t border-gray-100 p-6 text-gray-500">
+                  No hay facturas eléctricas para este periodo.
+                </div>
+              )}
             </div>
             <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[56rem]">
@@ -375,8 +428,15 @@ const InvoicesPage = () => {
                 </tr>
               </thead>
               <tbody>
+                {loading && (
+                  <tr>
+                    <td className="px-8 py-10 text-gray-500" colSpan={7}>
+                      Consultando facturas eléctricas...
+                    </td>
+                  </tr>
+                )}
                 {filteredInvoices.map((invoice) => {
-                  const Icon = invoice.concept === "Gas" ? LuFlame : FiZap;
+                  const Icon = FiZap;
                   return (
                     <tr
                       key={invoice.id}
@@ -393,10 +453,12 @@ const InvoicesPage = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-6">{invoice.date}</td>
+                      <td className="px-6 py-6">{invoice.invoiceDate}</td>
                       <td className="px-6 py-6">{invoice.concept}</td>
                       <td className="px-6 py-6">{invoice.period}</td>
-                      <td className="px-6 py-6 font-semibold">{invoice.amount}</td>
+                      <td className="px-6 py-6 font-semibold">
+                        {invoice.amountLabel}
+                      </td>
                       <td className="px-6 py-6">
                         <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-600">
                           {invoice.status}
@@ -433,13 +495,20 @@ const InvoicesPage = () => {
                     </tr>
                   );
                 })}
+                {!loading && filteredInvoices.length === 0 && (
+                  <tr>
+                    <td className="px-8 py-10 text-gray-500" colSpan={7}>
+                      No hay facturas eléctricas para este periodo.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
             </div>
             </>
           ) : (
             <div className="grid gap-4 p-8 md:grid-cols-3">
-              {["Electricidad", "Gas", "Total"].map((item, index) => (
+              {["Electricidad", "Total"].map((item) => (
                 <button
                   key={item}
                   onClick={() => navigate("/consumo")}
@@ -447,7 +516,15 @@ const InvoicesPage = () => {
                 >
                   <p className="font-bold text-[#07133d]">{item}</p>
                   <p className="mt-3 text-3xl font-bold text-[#0b82df]">
-                    {[86.8, 42.1, 128.9][index].toLocaleString("es-ES")} kWh
+                    {filteredInvoices
+                      .reduce(
+                        (sum, invoice) => sum + invoice.consumption.total,
+                        0,
+                      )
+                      .toLocaleString("es-ES", {
+                        maximumFractionDigits: 1,
+                      })}{" "}
+                    kWh
                   </p>
                   <p className="mt-2 text-sm text-gray-500">Ver detalle de consumo</p>
                 </button>

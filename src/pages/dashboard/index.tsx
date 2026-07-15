@@ -12,8 +12,11 @@ import {
   supportCards,
 } from "@/data/portalData";
 import { selectUser } from "@/pages/auth/features/authSlice";
+import { fetchPortalSupplies } from "@/pages/portalClient/services";
+import type { PortalSupply } from "@/pages/portalClient/types";
 import { useAppSelector } from "@/store/hooks";
 import { openEmail, openPhone, openWhatsapp } from "@/utils/portalActions";
+import { useEffect, useState } from "react";
 import {
   FiArrowRight,
   FiBarChart2,
@@ -33,6 +36,26 @@ const DashboardPage = () => {
   const user = useAppSelector(selectUser);
   const firstName = user.name?.split(" ")[0] || "Cliente";
   const cups = Array.isArray(user.cups) ? user.cups : [];
+  const [supplies, setSupplies] = useState<PortalSupply[]>([]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadSupplies = async () => {
+      try {
+        const response = await fetchPortalSupplies();
+        if (active) setSupplies(response.supplies);
+      } catch {
+        if (active) setSupplies([]);
+      }
+    };
+
+    loadSupplies();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSupportAction = (title: string, value: string) => {
     if (title === "WhatsApp") {
@@ -72,7 +95,13 @@ const DashboardPage = () => {
             </p>
             {cups.length > 0 && (
               <p className="mt-4 max-w-xl text-sm font-semibold text-[#0b82df]">
-                CUPS asociado{cups.length > 1 ? "s" : ""}: {cups.join(", ")}
+                {supplies[0]?.address || `CUPS asociado${cups.length > 1 ? "s" : ""}: ${cups.join(", ")}`}
+              </p>
+            )}
+            {supplies[0]?.contractStatus && (
+              <p className="mt-2 text-sm text-gray-500">
+                Contrato {supplies[0].contractStatus}
+                {supplies[0].tariff ? ` · Tarifa ${supplies[0].tariff}` : ""}
               </p>
             )}
           </div>
