@@ -11,6 +11,8 @@ import {
   quickLinks,
   supportCards,
 } from "@/data/portalData";
+import { selectUser } from "@/pages/auth/features/authSlice";
+import { useAppSelector } from "@/store/hooks";
 import { openEmail, openPhone, openWhatsapp } from "@/utils/portalActions";
 import {
   FiArrowRight,
@@ -28,6 +30,9 @@ import { toast } from "react-toastify";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const user = useAppSelector(selectUser);
+  const firstName = user.name?.split(" ")[0] || "Cliente";
+  const cups = Array.isArray(user.cups) ? user.cups : [];
 
   const handleSupportAction = (title: string, value: string) => {
     if (title === "WhatsApp") {
@@ -56,13 +61,20 @@ const DashboardPage = () => {
         <div className="absolute right-0 top-8 h-72 w-72 rounded-full bg-[#edf7ff] md:top-0 md:h-full md:w-3/5 md:rounded-bl-[18rem]" />
         <div className="relative grid grid-cols-[1fr_11rem] items-center gap-2 md:gap-8 lg:grid-cols-[1fr_28rem_18rem]">
           <div>
-            <p className="text-xl font-bold text-[#07133d] md:text-2xl">¡Hola, María! 👋</p>
+            <p className="text-xl font-bold text-[#07133d] md:text-2xl">
+              ¡Hola, {firstName}! 👋
+            </p>
             <h1 className="mt-3 max-w-xl text-4xl font-bold leading-tight text-[#07133d] md:mt-4 md:text-5xl">
               Bienvenida a tu <span className="text-[#0b82df]">área de clientes</span>
             </h1>
             <p className="mt-4 text-lg leading-relaxed text-gray-600 md:mt-5 md:text-xl">
               Gestiona tu energía de forma fácil y rápida.
             </p>
+            {cups.length > 0 && (
+              <p className="mt-4 max-w-xl text-sm font-semibold text-[#0b82df]">
+                CUPS asociado{cups.length > 1 ? "s" : ""}: {cups.join(", ")}
+              </p>
+            )}
           </div>
 
           <img src={piggyImage} alt="" className="mx-auto h-48 w-48 object-contain md:h-72 md:w-72" />

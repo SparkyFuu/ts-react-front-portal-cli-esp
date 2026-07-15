@@ -1,5 +1,6 @@
 import piggyImage from "@/assets/images/8.png";
 import logo from "@/assets/images/ENERGYASSET-LOGO_con_slogan.png";
+import { loginAsync, selectAuthOptions } from "@/pages/auth/features/authSlice";
 import {
   Tooltip,
   TooltipContent,
@@ -18,23 +19,31 @@ import {
 import { FaApple } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { toast } from "react-toastify";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const auth = useAppSelector(selectAuthOptions);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    toast.success(
-      username || password
-        ? "Sesión iniciada con datos de prueba"
-        : "Sesión demo iniciada",
+
+    const result = await dispatch(
+      loginAsync({ email: username.trim(), password }),
     );
-    navigate("/area-clientes");
+
+    if (!loginAsync.fulfilled.match(result)) return;
+
+    const nextRoute = result.payload.user.passwordChangeRequired
+      ? "/change-password"
+      : "/area-clientes";
+    navigate(nextRoute);
   };
 
   return (
@@ -70,6 +79,8 @@ const LoginPage = () => {
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 placeholder="ejemplo@correo.com"
+                autoComplete="username"
+                required
                 className="min-w-0 flex-1 text-lg outline-none placeholder:text-gray-400"
               />
             </span>
@@ -84,6 +95,8 @@ const LoginPage = () => {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="********"
+                autoComplete="current-password"
+                required
                 className="min-w-0 flex-1 text-lg outline-none placeholder:text-gray-400"
               />
               <button
@@ -118,9 +131,10 @@ const LoginPage = () => {
 
           <button
             type="submit"
-            className="mt-8 h-16 w-full rounded-xl bg-[#0b82df] text-lg font-bold text-white shadow-[0_18px_34px_rgba(11,130,223,0.28)] transition active:scale-[0.98]"
+            disabled={auth.loading}
+            className="mt-8 h-16 w-full rounded-xl bg-[#0b82df] text-lg font-bold text-white shadow-[0_18px_34px_rgba(11,130,223,0.28)] transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
           >
-            Iniciar sesión
+            {auth.loading ? "Entrando..." : "Iniciar sesión"}
           </button>
 
           <div className="my-7 flex items-center gap-4 text-gray-400">
@@ -198,6 +212,7 @@ const LoginPage = () => {
                 className="h-20 w-full rounded-[2rem] border border-[#0b82df] px-10 text-xl font-medium uppercase tracking-wide text-[#07133d] outline-none transition placeholder:text-gray-400 hover:bg-[#f8fbff] focus:ring-4 focus:ring-[#0b82df]/15"
                 placeholder="Usuario"
                 autoComplete="username"
+                required
               />
             </label>
 
@@ -210,6 +225,7 @@ const LoginPage = () => {
                 className="h-20 w-full rounded-[2rem] border border-[#0b82df] px-10 text-xl font-medium uppercase tracking-wide text-[#07133d] outline-none transition placeholder:text-gray-400 hover:bg-[#f8fbff] focus:ring-4 focus:ring-[#0b82df]/15"
                 placeholder="Password"
                 autoComplete="current-password"
+                required
               />
             </label>
 
@@ -217,12 +233,15 @@ const LoginPage = () => {
               <TooltipTrigger asChild>
                 <button
                   type="submit"
+                  disabled={auth.loading}
                   className="ml-16 mt-12 flex h-20 w-[28rem] max-w-[calc(100%-4rem)] items-center overflow-hidden rounded-[2rem] bg-[#0b82df] text-2xl font-bold text-white shadow-[0_16px_30px_rgba(11,130,223,0.25)] transition hover:-translate-y-0.5 hover:bg-[#076fc0] hover:shadow-[0_22px_42px_rgba(11,130,223,0.32)] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/20"
                 >
                   <span className="ml-2 flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#0b82df]">
                     <FiUser className="h-9 w-9" />
                   </span>
-                  <span className="flex-1 text-center">LOG IN</span>
+                  <span className="flex-1 text-center">
+                    {auth.loading ? "ENTRANDO..." : "LOG IN"}
+                  </span>
                 </button>
               </TooltipTrigger>
               <TooltipContent>Entrar al área de clientes demo</TooltipContent>

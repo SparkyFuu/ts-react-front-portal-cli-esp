@@ -5,12 +5,15 @@ import { toast } from "react-toastify";
 
 import type { ILoginCredentials } from "../types/authTypes";
 import { sendLogin } from "../services/authServices";
-import { ROUTE_PRIVILEGES } from "@/auth/accessControl";
 
 export type AuthUser = {
+  id?: number;
   name?: string;
   lastname?: string;
   email?: string;
+  cif?: string | null;
+  cups?: string[];
+  passwordChangeRequired?: boolean;
   privileges?: string[];
   [key: string]: unknown;
 };
@@ -39,19 +42,12 @@ export interface AuthState {
 }
 
 const initialState: AuthState = {
-  authenticated: true,
+  authenticated: false,
   token: "",
   refreshToken: "",
-  user: {
-    name: "Portal",
-    lastname: "CLI España",
-    email: "portal-cli@energyasset.cl",
-    privileges: Object.values(ROUTE_PRIVILEGES),
-  },
+  user: {},
   sessionExpireModalVisible: false,
-  decodedToken: {
-    privileges: Object.values(ROUTE_PRIVILEGES),
-  },
+  decodedToken: {},
   timerSession: null,
   loading: false,
   error: null,

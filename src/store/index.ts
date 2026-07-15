@@ -16,6 +16,7 @@ import authReducer, {
   logout,
   type AuthState,
 } from "@/pages/auth/features/authSlice";
+import { configureApiClientAuth } from "@/api/apiClient";
 
 const persistedAuthReducer = persistReducer<AuthState>(
   { key: "auth", storage },
@@ -38,6 +39,11 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
+
+configureApiClientAuth({
+  getAuthState: () => store.getState().auth,
+  onAuthLogout: () => store.dispatch(logout()),
+});
 
 export { login, logout };
 

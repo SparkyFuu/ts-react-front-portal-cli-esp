@@ -4,6 +4,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { customer, invoices } from "@/data/portalData";
+import { selectUser } from "@/pages/auth/features/authSlice";
+import { useAppSelector } from "@/store/hooks";
 import { downloadTextFile } from "@/utils/portalActions";
 import { useMemo, useState } from "react";
 import Select, { type SingleValue, type StylesConfig } from "react-select";
@@ -31,11 +33,6 @@ type PeriodOption = SelectOption & {
   startDate: string;
   endDate: string;
 };
-
-const supplyOptions: SelectOption[] = [
-  { label: customer.address, value: customer.address },
-  { label: "Calle Mayor, 40 - Madrid", value: "Calle Mayor, 40 - Madrid" },
-];
 
 const statusOptions: SelectOption[] = [
   { label: "Todos los estados", value: "Todos los estados" },
@@ -114,12 +111,27 @@ const periodIconSelectStyles = makeSelectStyles<PeriodOption>("42px");
 
 const InvoicesPage = () => {
   const navigate = useNavigate();
+  const user = useAppSelector(selectUser);
+  const supplyOptions: SelectOption[] = useMemo(() => {
+    const cups = Array.isArray(user.cups) ? user.cups : [];
+    if (!cups.length) return [{ label: customer.address, value: customer.address }];
+
+    return cups.map((cup) => ({
+      label: cup,
+      value: cup,
+    }));
+  }, [user.cups]);
   const [statusFilter, setStatusFilter] = useState("Todos los estados");
-  const [supplyFilter, setSupplyFilter] = useState(customer.address);
+  const [supplyFilter, setSupplyFilter] = useState(
+    supplyOptions[0]?.value || customer.address,
+  );
   const [startDate, setStartDate] = useState("2024-01-01");
   const [endDate, setEndDate] = useState("2024-05-04");
   const [activeTab, setActiveTab] = useState<InvoiceTab>("invoices");
   const [showConfig, setShowConfig] = useState(false);
+  const selectedSupply =
+    supplyOptions.find((option) => option.value === supplyFilter) ??
+    supplyOptions[0];
 
   const filteredInvoices = useMemo(() => {
     const toIsoDate = (date: string) => {
@@ -222,7 +234,7 @@ const InvoicesPage = () => {
             <Select<SelectOption, false>
               aria-label="Seleccionar suministro"
               options={supplyOptions}
-              value={supplyOptions.find((option) => option.value === supplyFilter)}
+              value={selectedSupply}
               onChange={(option: SingleValue<SelectOption>) => {
                 if (!option) return;
                 setSupplyFilter(option.value);
