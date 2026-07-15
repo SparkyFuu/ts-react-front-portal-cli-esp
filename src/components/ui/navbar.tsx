@@ -4,12 +4,10 @@ import {
   FiBell,
   FiChevronDown,
   FiFileText,
-  FiGift,
   FiHome,
   FiLogOut,
   FiMail,
   FiMoreHorizontal,
-  FiPackage,
   FiSettings,
   FiUser,
   FiUsers,
@@ -50,8 +48,8 @@ const PORTAL_NAV_ITEMS: NavItem[] = [
   { label: "Inicio", href: "/dashboard", icon: FiHome },
   { label: "Consumo", href: "/consumo", icon: FiBarChart2 },
   { label: "Facturas", href: "/facturas", icon: FiFileText },
-  { label: "Productos", href: "/productos", icon: FiPackage },
-  { label: "Plan Amigo", href: "/plan-amigo", icon: FiGift },
+  // { label: "Productos", href: "/productos", icon: FiPackage },
+  // { label: "Plan Amigo", href: "/plan-amigo", icon: FiGift },
   { label: "Contacto", href: "/contacto", icon: FiMail },
   { label: "Área de clientes", href: "/area-clientes", icon: FiUsers },
 ];
@@ -59,7 +57,7 @@ const PORTAL_NAV_ITEMS: NavItem[] = [
 const STANDARD_BOTTOM_ITEMS: NavItem[] = [
   { label: "Inicio", href: "/dashboard", icon: FiHome },
   { label: "Consumo", href: "/consumo", icon: FiBarChart2 },
-  { label: "Plan Amigo", href: "/plan-amigo", icon: FiGift },
+  // { label: "Plan Amigo", href: "/plan-amigo", icon: FiGift },
   { label: "Facturas", href: "/facturas", icon: FiFileText },
   { label: "Contacto", href: "/contacto", icon: FiMail },
 ];
