@@ -135,7 +135,7 @@ const StaticPage = () => {
             {newsTitle || "Últimas novedades ENERGYASSET"}
           </h2>
           <p className="mt-3 text-gray-600">
-            Contenido informativo preparado para publicarse desde el backend.
+            Contenido informativo preparado para publicarse próximamente.
           </p>
         </section>
       ) : location.pathname === "/mas" ? (

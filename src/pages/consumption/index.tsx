@@ -296,7 +296,7 @@ const ConsumptionPage = () => {
               ) : (
                 <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-gray-200 text-center text-gray-500">
                   {loading
-                    ? "Consultando BOMP..."
+                    ? "Consultando tus datos..."
                     : "Aún no hay consumo eléctrico disponible."}
                 </div>
               )}

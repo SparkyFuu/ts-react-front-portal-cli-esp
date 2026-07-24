@@ -24,7 +24,6 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
-type InvoiceTab = "invoices" | "consumptions";
 type SelectOption = {
   label: string;
   value: string;
@@ -83,7 +82,6 @@ const InvoicesPage = () => {
     }));
   }, [user.cups]);
   const [supplyFilter, setSupplyFilter] = useState("");
-  const [activeTab, setActiveTab] = useState<InvoiceTab>("invoices");
   const [showConfig, setShowConfig] = useState(false);
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [attachPdf, setAttachPdf] = useState(true);
@@ -257,41 +255,23 @@ const InvoicesPage = () => {
       </section>
       )}
 
-      <div className="mt-8 grid grid-cols-2 overflow-hidden rounded-xl bg-white shadow-[0_12px_30px_rgba(15,38,71,0.06)] md:mt-12 md:flex md:gap-14 md:rounded-none md:border-b md:border-gray-200 md:bg-transparent md:shadow-none">
-        <button
-          onClick={() => setActiveTab("invoices")}
-          className={`px-6 py-5 font-bold transition hover:text-[#0b82df] md:px-12 md:pb-5 md:pt-0 ${
-            activeTab === "invoices"
-              ? "border-b-4 border-[#0b82df] text-[#0b82df]"
-              : "text-gray-500"
-          }`}
-        >
+      <div className="mt-8 border-b border-gray-200 md:mt-12">
+        <h2 className="inline-flex border-b-4 border-[#0b82df] px-6 pb-5 text-xl font-bold text-[#0b82df] md:px-12">
           Mis facturas
-        </button>
-        <button
-          onClick={() => setActiveTab("consumptions")}
-          className={`px-6 py-5 font-bold transition hover:text-[#0b82df] md:px-12 md:pb-5 md:pt-0 ${
-            activeTab === "consumptions"
-              ? "border-b-4 border-[#0b82df] text-[#0b82df]"
-              : "text-gray-500"
-          }`}
-        >
-          Mis consumos
-        </button>
+        </h2>
       </div>
 
       <section className="mt-8 grid gap-8 lg:grid-cols-[1fr_18rem]">
         <article className="overflow-hidden rounded-xl bg-white shadow-[0_16px_45px_rgba(15,38,71,0.08)]">
           <div className="p-8">
             <h2 className="text-2xl font-bold text-[#07133d]">
-              {activeTab === "invoices" ? "Últimas facturas" : "Últimos consumos"}{" "}
+              Últimas facturas{" "}
               <span className="text-base font-normal text-gray-500">IVA incl.</span>{" "}
               <FiInfo className="inline h-4 w-4" />
             </h2>
           </div>
 
-          {activeTab === "invoices" ? (
-            <>
+          <>
             <div className="md:hidden">
               {loading && (
                 <div className="border-t border-gray-100 p-6 text-gray-500">
@@ -438,32 +418,7 @@ const InvoicesPage = () => {
               </tbody>
             </table>
             </div>
-            </>
-          ) : (
-            <div className="grid gap-4 p-8 md:grid-cols-3">
-              {["Electricidad", "Total"].map((item) => (
-                <button
-                  key={item}
-                  onClick={() => navigate("/consumo")}
-                  className="rounded-xl border border-gray-100 p-6 text-left transition hover:-translate-y-0.5 hover:border-[#0b82df]/40 hover:shadow-[0_16px_34px_rgba(15,38,71,0.08)] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15"
-                >
-                  <p className="font-bold text-[#07133d]">{item}</p>
-                  <p className="mt-3 text-3xl font-bold text-[#0b82df]">
-                    {filteredInvoices
-                      .reduce(
-                        (sum, invoice) => sum + invoice.consumption.total,
-                        0,
-                      )
-                      .toLocaleString("es-ES", {
-                        maximumFractionDigits: 1,
-                      })}{" "}
-                    kWh
-                  </p>
-                  <p className="mt-2 text-sm text-gray-500">Ver detalle de consumo</p>
-                </button>
-              ))}
-            </div>
-          )}
+          </>
 
         </article>
 

@@ -53,7 +53,7 @@ export type PortalSuppliesResponse = {
     cif?: string | null;
   };
   supplies: PortalSupply[];
-  source: "bomp";
+  source: string;
 };
 
 export type PortalInvoicesResponse = {
@@ -63,7 +63,7 @@ export type PortalInvoicesResponse = {
     count: number;
     amount: number;
   };
-  source: "bomp";
+  source: string;
 };
 
 export type PortalConsumptionResponse = {
@@ -78,5 +78,5 @@ export type PortalConsumptionResponse = {
     flatAverage: number;
     valleyAverage: number;
   };
-  source: "bomp";
+  source: string;
 };
