@@ -3,7 +3,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { customer } from "@/data/portalData";
 import { selectUser } from "@/pages/auth/features/authSlice";
 import {
   downloadPortalInvoicePdf,
@@ -45,6 +44,12 @@ const statusOptions: SelectOption[] = [
 ];
 
 const periodOptions: PeriodOption[] = [
+  {
+    label: "Todas las facturas",
+    value: "all",
+    startDate: "",
+    endDate: "",
+  },
   {
     label: "01/01/2024 — 04/05/2024",
     value: "2024-01-01_2024-05-04",
@@ -118,7 +123,6 @@ const InvoicesPage = () => {
   const user = useAppSelector(selectUser);
   const supplyOptions: SelectOption[] = useMemo(() => {
     const cups = Array.isArray(user.cups) ? user.cups : [];
-    if (!cups.length) return [{ label: customer.address, value: customer.address }];
 
     return cups.map((cup) => ({
       label: cup,
@@ -126,11 +130,9 @@ const InvoicesPage = () => {
     }));
   }, [user.cups]);
   const [statusFilter, setStatusFilter] = useState("Todos los estados");
-  const [supplyFilter, setSupplyFilter] = useState(
-    supplyOptions[0]?.value || customer.address,
-  );
-  const [startDate, setStartDate] = useState("2024-01-01");
-  const [endDate, setEndDate] = useState("2024-05-04");
+  const [supplyFilter, setSupplyFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [activeTab, setActiveTab] = useState<InvoiceTab>("invoices");
   const [showConfig, setShowConfig] = useState(false);
   const [invoices, setInvoices] = useState<PortalInvoice[]>([]);
@@ -138,6 +140,12 @@ const InvoicesPage = () => {
   const selectedSupply =
     supplyOptions.find((option) => option.value === supplyFilter) ??
     supplyOptions[0];
+
+  useEffect(() => {
+    if (!supplyFilter && supplyOptions[0]) {
+      setSupplyFilter(supplyOptions[0].value);
+    }
+  }, [supplyFilter, supplyOptions]);
 
   useEffect(() => {
     let active = true;
@@ -148,8 +156,6 @@ const InvoicesPage = () => {
       try {
         const response = await fetchPortalInvoices({
           cups: selectedSupply?.value,
-          dateFrom: startDate,
-          dateTo: endDate,
           status: statusFilter,
         });
         if (active) setInvoices(response.invoices);
@@ -536,8 +542,8 @@ const InvoicesPage = () => {
             <button
               onClick={() => {
                 setStatusFilter("Todos los estados");
-                setStartDate("2024-01-01");
-                setEndDate("2024-05-04");
+                setStartDate("");
+                setEndDate("");
                 setActiveTab("invoices");
               }}
               className="flex items-center gap-3 rounded-lg border border-[#0b82df] px-10 py-4 font-bold text-[#0b82df] transition hover:bg-[#0b82df] hover:text-white focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15"
