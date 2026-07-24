@@ -29,7 +29,6 @@ import {
 } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -37,6 +36,9 @@ const DashboardPage = () => {
   const firstName = user.name?.split(" ")[0] || "Cliente";
   const cups = Array.isArray(user.cups) ? user.cups : [];
   const [supplies, setSupplies] = useState<PortalSupply[]>([]);
+  const areaTitle = firstName.toLowerCase().endsWith("a")
+    ? "Bienvenida a tu"
+    : "Bienvenido a tu";
 
   useEffect(() => {
     let active = true;
@@ -88,7 +90,7 @@ const DashboardPage = () => {
               ¡Hola, {firstName}! 👋
             </p>
             <h1 className="mt-3 max-w-xl text-4xl font-bold leading-tight text-[#07133d] md:mt-4 md:text-5xl">
-              Bienvenida a tu <span className="text-[#0b82df]">área de clientes</span>
+              {areaTitle} <span className="text-[#0b82df]">área de clientes</span>
             </h1>
             <p className="mt-4 text-lg leading-relaxed text-gray-600 md:mt-5 md:text-xl">
               Gestiona tu energía de forma fácil y rápida.
@@ -203,7 +205,9 @@ const DashboardPage = () => {
               {news.map((item) => (
                 <button
                   key={item.title}
-                  onClick={() => toast.info(`Abriendo noticia: ${item.title}`)}
+                  onClick={() =>
+                    navigate(`/noticias?title=${encodeURIComponent(item.title)}`)
+                  }
                   className="flex gap-4 rounded-lg border border-gray-100 p-4 text-left transition hover:-translate-y-0.5 hover:border-[#0b82df]/40 hover:shadow-[0_14px_30px_rgba(15,38,71,0.08)] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15 [&:nth-child(n+2)]:hidden md:[&:nth-child(n+2)]:flex"
                 >
                   <img src={item.image} alt="" className="h-24 w-24 rounded-lg object-cover" />
@@ -240,7 +244,7 @@ const DashboardPage = () => {
           })}
           <div className="p-6">
             <button
-              onClick={() => toast.info("Mostrando todas las opciones del área de clientes")}
+              onClick={() => navigate("/mas")}
               className="h-12 w-full rounded-lg border border-[#0b82df] font-bold text-[#0b82df] transition hover:bg-[#0b82df] hover:text-white focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15"
             >
               Ver todas las opciones

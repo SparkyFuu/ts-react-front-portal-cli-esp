@@ -20,7 +20,7 @@ import { FaApple } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { toast } from "react-toastify";
+import { openEmail, openPhone } from "@/utils/portalActions";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -30,6 +30,22 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+
+  const requestPasswordHelp = () => {
+    openEmail(
+      "clientes@energyasset.es",
+      "Recuperación de acceso al portal ENERGYASSET",
+    );
+  };
+
+  const requestPortalAccess = (provider?: "Google" | "Apple") => {
+    openEmail(
+      "clientes@energyasset.es",
+      provider
+        ? `Solicitud de acceso al portal con ${provider}`
+        : "Solicitud de alta en portal cliente ENERGYASSET",
+    );
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -122,7 +138,7 @@ const LoginPage = () => {
             </label>
             <button
               type="button"
-              onClick={() => toast.info("Te enviaremos un enlace de recuperación cuando conectemos el backend")}
+              onClick={requestPasswordHelp}
               className="font-bold text-[#0b82df]"
             >
               ¿Has olvidado tu contraseña?
@@ -145,21 +161,25 @@ const LoginPage = () => {
 
           <button
             type="button"
-            onClick={() => toast.info("Google OAuth pendiente de integración")}
+            onClick={() => requestPortalAccess("Google")}
             className="flex h-14 w-full items-center justify-center gap-4 rounded-xl border border-gray-200 text-lg font-bold text-[#07133d]"
           >
             <FcGoogle className="h-7 w-7" /> Continuar con Google
           </button>
           <button
             type="button"
-            onClick={() => toast.info("Apple OAuth pendiente de integración")}
+            onClick={() => requestPortalAccess("Apple")}
             className="mt-4 flex h-14 w-full items-center justify-center gap-4 rounded-xl border border-gray-200 text-lg font-bold text-[#07133d]"
           >
             <FaApple className="h-7 w-7" /> Continuar con Apple
           </button>
           <p className="mt-7 text-center text-gray-500">
             ¿No tienes cuenta?{" "}
-            <button type="button" className="font-bold text-[#0b82df]">
+            <button
+              type="button"
+              onClick={() => requestPortalAccess()}
+              className="font-bold text-[#0b82df]"
+            >
               Regístrate
             </button>
           </p>
@@ -167,7 +187,7 @@ const LoginPage = () => {
 
         <button
           type="button"
-          onClick={() => toast.info("Abriendo canal de atención")}
+          onClick={() => openPhone("900 103 254")}
           className="relative mt-8 flex w-full items-center gap-5 rounded-2xl bg-[#eef7ff] p-5 text-left"
         >
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#dff0ff] text-[#0b82df]">
@@ -251,9 +271,7 @@ const LoginPage = () => {
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  onClick={() =>
-                    toast.info("Te enviaremos un enlace de recuperación cuando conectemos el backend")
-                  }
+                  onClick={requestPasswordHelp}
                   className="ml-16 mt-8 rounded-md px-3 py-2 text-lg font-medium text-[#0b82df] transition hover:bg-[#eef6ff] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15"
                 >
                   ¿Olvidaste tu contraseña?

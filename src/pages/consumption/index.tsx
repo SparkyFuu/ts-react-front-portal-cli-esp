@@ -80,6 +80,7 @@ const selectStyles: StylesConfig<RangeSelectOption, false> = {
 const ConsumptionPage = () => {
   const navigate = useNavigate();
   const user = useAppSelector(selectUser);
+  const firstName = user.name?.split(" ")[0] || "Cliente";
   const cups = Array.isArray(user.cups) ? user.cups[0] : undefined;
   const [range, setRange] = useState<RangeOption>(12);
   const [selectedMonth, setSelectedMonth] = useState<string>("FEB");
@@ -156,7 +157,14 @@ const ConsumptionPage = () => {
   };
 
   const invoicePreview = (invoiceId: string) =>
-    toast.info(`Abriendo detalle de factura ${invoiceId}`);
+    navigate(`/facturas?invoice=${encodeURIComponent(invoiceId)}`);
+
+  const showPeakHours = () => {
+    setRange(6);
+    document
+      .getElementById("consumption-chart")
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
 
   return (
     <main className="bg-white pb-24 md:pb-0">
@@ -164,7 +172,9 @@ const ConsumptionPage = () => {
         <div className="absolute right-0 top-10 h-72 w-72 rounded-full bg-[#edf7ff] md:top-0 md:h-full md:w-3/5 md:rounded-bl-[18rem]" />
         <div className="relative grid grid-cols-[1fr_13rem] items-center gap-2 lg:grid-cols-[1fr_34rem] lg:gap-8">
           <div>
-            <p className="text-3xl font-bold text-[#0b82df] md:text-4xl">¡Hola!</p>
+            <p className="text-3xl font-bold text-[#0b82df] md:text-4xl">
+              ¡Hola, {firstName}!
+            </p>
             <h1 className="mt-3 text-4xl font-bold leading-tight text-[#07133d] md:text-6xl">
               Este es tu consumo
             </h1>
@@ -341,7 +351,7 @@ const ConsumptionPage = () => {
           <span className="h-3 w-3 rounded-full bg-[#cfe9ff]" />
         </div>
         <button
-          onClick={() => toast.info("Detalle de horas punta pendiente de integración")}
+          onClick={showPeakHours}
           className="flex w-full items-center gap-5 rounded-2xl bg-white p-6 text-left shadow-[0_18px_45px_rgba(15,38,71,0.10)]"
         >
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eef6ff] text-[#0b82df]">

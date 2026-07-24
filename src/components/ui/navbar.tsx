@@ -14,7 +14,7 @@ import {
 } from "react-icons/fi";
 import type { IconType } from "react-icons";
 import { useDispatch } from "react-redux";
-import { logout } from "@/pages/auth/features/authSlice";
+import { logout, selectUser } from "@/pages/auth/features/authSlice";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { useAppSelector } from "@/store/hooks";
 
 type NavItem = {
   label: string;
@@ -74,10 +74,19 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
+  const user = useAppSelector(selectUser);
   const isPublic = location.pathname === "/login";
   const navItems: NavItem[] = isPublic ? PUBLIC_NAV_ITEMS : PORTAL_NAV_ITEMS;
   const bottomItems =
     location.pathname === "/area-clientes" ? AREA_BOTTOM_ITEMS : STANDARD_BOTTOM_ITEMS;
+  const displayName = user.name?.trim() || user.email?.split("@")[0] || "Cliente";
+  const firstName = displayName.split(/\s+/)[0] || "Cliente";
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "C";
 
   const handleLogout = () => {
     dispatch(logout());
@@ -159,7 +168,7 @@ const Navbar = () => {
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  onClick={() => toast.info("No tienes notificaciones nuevas")}
+                  onClick={() => navigate("/notificaciones")}
                   className="relative hidden h-11 w-11 items-center justify-center rounded-full border border-gray-200 text-[#18233c] transition hover:border-[#0b82df] hover:bg-[#eef6ff] hover:text-[#0b82df] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15 md:flex"
                   aria-label="Notificaciones"
                 >
@@ -176,13 +185,13 @@ const Navbar = () => {
               <DropdownMenuTrigger className="flex items-center gap-3 rounded-lg outline-none transition hover:bg-[#f7fbff] focus:ring-4 focus:ring-[#0b82df]/15">
                 <span className="flex items-center gap-3 md:border-l md:border-gray-200 md:pl-5">
                   <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#0b82df] bg-white text-base font-bold text-[#0b82df] md:h-12 md:w-12 md:border-0 md:bg-[#0b82df] md:text-white">
-                    M
+                    {initials}
                   </span>
                   <span className="hidden text-left leading-tight md:block">
                     <span className="block text-sm font-semibold text-[#18233c]">
                       Hola,
                     </span>
-                    <span className="block text-sm text-[#18233c]">María</span>
+                    <span className="block text-sm text-[#18233c]">{firstName}</span>
                   </span>
                 </span>
                 <FiChevronDown className="h-5 w-5 text-[#63708a]" />
@@ -200,6 +209,14 @@ const Navbar = () => {
                 >
                   <FiSettings className="text-[#0b82df]" />
                   <span>Configuración</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => navigate("/change-password")}
+                  className="flex cursor-pointer items-center gap-2"
+                >
+                  <FiUser className="text-[#0b82df]" />
+                  <span>Cambiar contraseña</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem

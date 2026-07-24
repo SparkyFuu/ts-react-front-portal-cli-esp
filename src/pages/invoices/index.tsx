@@ -10,11 +10,9 @@ import {
 } from "@/pages/portalClient/services";
 import type { PortalInvoice } from "@/pages/portalClient/types";
 import { useAppSelector } from "@/store/hooks";
-import { downloadTextFile } from "@/utils/portalActions";
 import { useEffect, useMemo, useState } from "react";
 import Select, { type SingleValue, type StylesConfig } from "react-select";
 import {
-  FiCalendar,
   FiDownload,
   FiExternalLink,
   FiFileText,
@@ -24,7 +22,7 @@ import {
   FiChevronRight,
   FiZap,
 } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 type InvoiceTab = "invoices" | "consumptions";
@@ -32,49 +30,6 @@ type SelectOption = {
   label: string;
   value: string;
 };
-type PeriodOption = SelectOption & {
-  startDate: string;
-  endDate: string;
-};
-
-const statusOptions: SelectOption[] = [
-  { label: "Todos los estados", value: "Todos los estados" },
-  { label: "Pagada", value: "Pagada" },
-  { label: "Pendiente", value: "Pendiente" },
-];
-
-const periodOptions: PeriodOption[] = [
-  {
-    label: "Todas las facturas",
-    value: "all",
-    startDate: "",
-    endDate: "",
-  },
-  {
-    label: "01/01/2024 — 04/05/2024",
-    value: "2024-01-01_2024-05-04",
-    startDate: "2024-01-01",
-    endDate: "2024-05-04",
-  },
-  {
-    label: "Últimos 30 días",
-    value: "2024-03-18_2024-04-18",
-    startDate: "2024-03-18",
-    endDate: "2024-04-18",
-  },
-  {
-    label: "Enero 2024",
-    value: "2024-01-01_2024-01-31",
-    startDate: "2024-01-01",
-    endDate: "2024-01-31",
-  },
-  {
-    label: "Febrero 2024",
-    value: "2024-02-01_2024-02-29",
-    startDate: "2024-02-01",
-    endDate: "2024-02-29",
-  },
-];
 
 const makeSelectStyles = <Option extends SelectOption>(
   valuePaddingLeft = "18px",
@@ -114,12 +69,11 @@ const makeSelectStyles = <Option extends SelectOption>(
   singleValue: (base) => ({ ...base, color: "#07133d" }),
 });
 
-const selectStyles = makeSelectStyles<SelectOption>();
 const iconSelectStyles = makeSelectStyles<SelectOption>("42px");
-const periodIconSelectStyles = makeSelectStyles<PeriodOption>("42px");
 
 const InvoicesPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const user = useAppSelector(selectUser);
   const supplyOptions: SelectOption[] = useMemo(() => {
     const cups = Array.isArray(user.cups) ? user.cups : [];
@@ -129,12 +83,11 @@ const InvoicesPage = () => {
       value: cup,
     }));
   }, [user.cups]);
-  const [statusFilter, setStatusFilter] = useState("Todos los estados");
   const [supplyFilter, setSupplyFilter] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [activeTab, setActiveTab] = useState<InvoiceTab>("invoices");
   const [showConfig, setShowConfig] = useState(false);
+  const [emailAlerts, setEmailAlerts] = useState(true);
+  const [attachPdf, setAttachPdf] = useState(true);
   const [invoices, setInvoices] = useState<PortalInvoice[]>([]);
   const [loading, setLoading] = useState(false);
   const selectedSupply =
@@ -156,7 +109,6 @@ const InvoicesPage = () => {
       try {
         const response = await fetchPortalInvoices({
           cups: selectedSupply?.value,
-          status: statusFilter,
         });
         if (active) setInvoices(response.invoices);
       } catch {
@@ -174,28 +126,23 @@ const InvoicesPage = () => {
     return () => {
       active = false;
     };
-  }, [endDate, selectedSupply?.value, startDate, statusFilter]);
+  }, [selectedSupply?.value]);
 
   const filteredInvoices = invoices;
 
-  const exportInvoices = () => {
-    const csv = [
-      "Factura,Fecha,Concepto,Periodo,Importe,Estado",
-      ...filteredInvoices.map((invoice) =>
-        [
-          invoice.id,
-          invoice.invoiceDate,
-          invoice.concept,
-          invoice.period,
-          invoice.amountLabel,
-          invoice.status,
-        ].join(","),
-      ),
-    ].join("\n");
+  useEffect(() => {
+    const invoiceId = searchParams.get("invoice");
+    if (!invoiceId || loading || !filteredInvoices.length) return;
 
-    downloadTextFile("facturas-energyasset.csv", csv, "text/csv;charset=utf-8");
-    toast.success("Exportación generada");
-  };
+    const exists = filteredInvoices.some((invoice) => invoice.id === invoiceId);
+    if (!exists) return;
+
+    openInvoice(invoiceId);
+    setSearchParams((current) => {
+      current.delete("invoice");
+      return current;
+    });
+  }, [filteredInvoices, loading, searchParams, setSearchParams]);
 
   const downloadInvoice = async (invoiceId: string) => {
     const invoice = filteredInvoices.find((item) => item.id === invoiceId);
@@ -254,15 +201,32 @@ const InvoicesPage = () => {
           <h2 className="text-xl font-bold text-[#07133d]">Configuración de facturas</h2>
           <div className="mt-4 flex flex-wrap gap-4">
             <label className="flex items-center gap-3">
-              <input type="checkbox" defaultChecked className="h-5 w-5 accent-[#0b82df]" />
+              <input
+                type="checkbox"
+                checked={emailAlerts}
+                onChange={(event) => setEmailAlerts(event.target.checked)}
+                className="h-5 w-5 accent-[#0b82df]"
+              />
               Recibir aviso por email
             </label>
             <label className="flex items-center gap-3">
-              <input type="checkbox" defaultChecked className="h-5 w-5 accent-[#0b82df]" />
+              <input
+                type="checkbox"
+                checked={attachPdf}
+                onChange={(event) => setAttachPdf(event.target.checked)}
+                className="h-5 w-5 accent-[#0b82df]"
+              />
               Adjuntar PDF
             </label>
             <button
-              onClick={() => toast.success("Preferencias guardadas")}
+              onClick={() => {
+                setShowConfig(false);
+                toast.success(
+                  `Preferencias guardadas: aviso ${
+                    emailAlerts ? "activado" : "desactivado"
+                  }, PDF ${attachPdf ? "adjunto" : "sin adjuntar"}.`,
+                );
+              }}
               className="rounded-lg bg-[#0b82df] px-6 py-2 font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#076fc0] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/20"
             >
               Guardar
@@ -271,7 +235,8 @@ const InvoicesPage = () => {
         </section>
       )}
 
-      <section className="mt-8 grid gap-0 overflow-hidden rounded-2xl bg-white shadow-[0_16px_45px_rgba(15,38,71,0.08)] md:mt-12 md:gap-8 md:overflow-visible md:rounded-xl md:p-8 lg:grid-cols-[1.2fr_1.2fr_0.9fr_auto]">
+      {supplyOptions.length > 1 && (
+      <section className="mt-8 overflow-hidden rounded-2xl bg-white shadow-[0_16px_45px_rgba(15,38,71,0.08)] md:mt-12 md:overflow-visible md:rounded-xl md:p-8">
         <label>
           <span className="mb-4 hidden font-bold text-[#07133d] md:block">Suministro</span>
           <div className="relative border-b border-gray-100 md:border-b-0">
@@ -290,59 +255,8 @@ const InvoicesPage = () => {
             />
           </div>
         </label>
-
-        <label>
-          <span className="mb-4 hidden font-bold text-[#07133d] md:block">Periodo</span>
-          <div className="relative md:border-b-0">
-            <FiCalendar className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-[#0b82df]" />
-            <Select<PeriodOption, false>
-              aria-label="Seleccionar periodo"
-              options={periodOptions}
-              value={
-                periodOptions.find(
-                  (option) =>
-                    option.startDate === startDate && option.endDate === endDate,
-                ) ?? periodOptions[0]
-              }
-              onChange={(option: SingleValue<PeriodOption>) => {
-                if (!option) return;
-                setStartDate(option.startDate);
-                setEndDate(option.endDate);
-              }}
-              styles={periodIconSelectStyles}
-              isSearchable={false}
-            />
-          </div>
-        </label>
-
-        <label className="hidden md:block">
-          <span className="mb-4 block font-bold text-[#07133d]">Estado</span>
-          <Select<SelectOption, false>
-            aria-label="Seleccionar estado de factura"
-            options={statusOptions}
-            value={statusOptions.find((option) => option.value === statusFilter)}
-            onChange={(option: SingleValue<SelectOption>) => {
-              if (option) setStatusFilter(option.value);
-            }}
-            styles={selectStyles}
-            isSearchable={false}
-          />
-        </label>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={exportInvoices}
-              className="hidden self-end rounded-lg border border-[#0b82df] px-9 py-5 font-bold text-[#0b82df] transition hover:-translate-y-0.5 hover:bg-[#0b82df] hover:text-white hover:shadow-[0_16px_30px_rgba(11,130,223,0.22)] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15 md:block"
-            >
-              <span className="flex items-center gap-3">
-                <FiDownload /> Exportar
-              </span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>Descargar facturas filtradas en CSV</TooltipContent>
-        </Tooltip>
       </section>
+      )}
 
       <div className="mt-8 grid grid-cols-2 overflow-hidden rounded-xl bg-white shadow-[0_12px_30px_rgba(15,38,71,0.06)] md:mt-12 md:flex md:gap-14 md:rounded-none md:border-b md:border-gray-200 md:bg-transparent md:shadow-none">
         <button
@@ -538,19 +452,6 @@ const InvoicesPage = () => {
             </div>
           )}
 
-          <div className="flex justify-center p-8">
-            <button
-              onClick={() => {
-                setStatusFilter("Todos los estados");
-                setStartDate("");
-                setEndDate("");
-                setActiveTab("invoices");
-              }}
-              className="flex items-center gap-3 rounded-lg border border-[#0b82df] px-10 py-4 font-bold text-[#0b82df] transition hover:bg-[#0b82df] hover:text-white focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15"
-            >
-              <FiFileText /> Ver todas mis facturas
-            </button>
-          </div>
         </article>
 
         <aside className="hidden h-fit rounded-xl bg-[#eef6ff] p-8 shadow-[0_16px_45px_rgba(15,38,71,0.08)] lg:block">
