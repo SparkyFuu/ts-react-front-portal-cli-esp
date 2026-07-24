@@ -7,7 +7,6 @@ import {
   FiHome,
   FiLogOut,
   FiMail,
-  FiMoreHorizontal,
   FiSettings,
   FiUser,
   FiUsers,
@@ -57,8 +56,8 @@ const PORTAL_NAV_ITEMS: NavItem[] = [
 const STANDARD_BOTTOM_ITEMS: NavItem[] = [
   { label: "Inicio", href: "/dashboard", icon: FiHome },
   { label: "Consumo", href: "/consumo", icon: FiBarChart2 },
-  // { label: "Plan Amigo", href: "/plan-amigo", icon: FiGift },
   { label: "Facturas", href: "/facturas", icon: FiFileText },
+  { label: "Área", href: "/area-clientes", icon: FiUser },
   { label: "Contacto", href: "/contacto", icon: FiMail },
 ];
 
@@ -67,7 +66,7 @@ const AREA_BOTTOM_ITEMS: NavItem[] = [
   { label: "Consumo", href: "/consumo", icon: FiBarChart2 },
   { label: "Facturas", href: "/facturas", icon: FiFileText },
   { label: "Área", href: "/area-clientes", icon: FiUser },
-  { label: "Más", href: "/mas", icon: FiMoreHorizontal },
+  { label: "Contacto", href: "/contacto", icon: FiMail },
 ];
 
 const Navbar = () => {
@@ -78,7 +77,7 @@ const Navbar = () => {
   const isPublic = location.pathname === "/login";
   const navItems: NavItem[] = isPublic ? PUBLIC_NAV_ITEMS : PORTAL_NAV_ITEMS;
   const bottomItems =
-    location.pathname === "/area-clientes" ? AREA_BOTTOM_ITEMS : STANDARD_BOTTOM_ITEMS;
+    location.pathname === "/mas" ? AREA_BOTTOM_ITEMS : STANDARD_BOTTOM_ITEMS;
   const displayName = user.name?.trim() || user.email?.split("@")[0] || "Cliente";
   const firstName = displayName.split(/\s+/)[0] || "Cliente";
   const initials = displayName

@@ -16,8 +16,6 @@ import {
   FiShield,
   FiUser,
 } from "react-icons/fi";
-import { FaApple } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { openEmail, openPhone } from "@/utils/portalActions";
@@ -38,12 +36,10 @@ const LoginPage = () => {
     );
   };
 
-  const requestPortalAccess = (provider?: "Google" | "Apple") => {
+  const requestPortalAccess = () => {
     openEmail(
       "clientes@energyasset.es",
-      provider
-        ? `Solicitud de acceso al portal con ${provider}`
-        : "Solicitud de alta en portal cliente ENERGYASSET",
+      "Solicitud de alta en portal cliente ENERGYASSET",
     );
   };
 
@@ -64,26 +60,26 @@ const LoginPage = () => {
 
   return (
     <main className="bg-white">
-      <section className="relative min-h-screen overflow-hidden bg-white px-6 pb-10 pt-8 md:hidden">
+      <section className="relative min-h-screen overflow-visible bg-white px-6 pb-10 pt-3 md:hidden">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 rounded-t-[60%] bg-[#e7f4ff]" />
 
-        <img src={logo} alt="ENERGYASSET" className="relative mt-10 h-16 w-auto object-contain" />
+        <img src={logo} alt="ENERGYASSET" className="relative h-14 w-auto object-contain" />
 
-        <div className="relative mt-8 grid grid-cols-[1fr_12rem] items-center gap-1">
+        <div className="relative mt-5 grid grid-cols-[1fr_10rem] items-center gap-1">
           <div>
-            <h1 className="text-4xl font-bold leading-tight text-[#07133d]">
+            <h1 className="text-3xl font-bold leading-tight text-[#07133d]">
               Bienvenido a tu <span className="text-[#45a9e8]">área de clientes</span>
             </h1>
-            <p className="mt-5 text-xl leading-relaxed text-gray-600">
+            <p className="mt-4 text-lg leading-relaxed text-gray-600">
               Accede para gestionar tu energía de forma fácil y rápida.
             </p>
           </div>
-          <img src={piggyImage} alt="" className="h-48 w-48 object-contain" />
+          <img src={piggyImage} alt="" className="h-40 w-40 object-contain" />
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="relative mt-8 rounded-[2rem] bg-white p-6 shadow-[0_18px_50px_rgba(15,38,71,0.10)]"
+          className="relative mt-6 rounded-[2rem] bg-white p-6 shadow-[0_18px_50px_rgba(15,38,71,0.10)]"
         >
           <h2 className="text-2xl font-bold text-[#07133d]">Inicia sesión</h2>
 
@@ -153,26 +149,6 @@ const LoginPage = () => {
             {auth.loading ? "Entrando..." : "Iniciar sesión"}
           </button>
 
-          <div className="my-7 flex items-center gap-4 text-gray-400">
-            <span className="h-px flex-1 bg-gray-200" />
-            <span>O continúa con</span>
-            <span className="h-px flex-1 bg-gray-200" />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => requestPortalAccess("Google")}
-            className="flex h-14 w-full items-center justify-center gap-4 rounded-xl border border-gray-200 text-lg font-bold text-[#07133d]"
-          >
-            <FcGoogle className="h-7 w-7" /> Continuar con Google
-          </button>
-          <button
-            type="button"
-            onClick={() => requestPortalAccess("Apple")}
-            className="mt-4 flex h-14 w-full items-center justify-center gap-4 rounded-xl border border-gray-200 text-lg font-bold text-[#07133d]"
-          >
-            <FaApple className="h-7 w-7" /> Continuar con Apple
-          </button>
           <p className="mt-7 text-center text-gray-500">
             ¿No tienes cuenta?{" "}
             <button
@@ -283,17 +259,17 @@ const LoginPage = () => {
         </div>
       </section>
 
-      <section className="grid border-t border-gray-200 bg-white px-6 py-8 md:grid-cols-3 md:px-24">
+      <section className="grid gap-4 border-t border-gray-200 bg-white px-6 py-6 md:grid-cols-3 md:gap-0 md:px-24 md:py-8">
         {[
           { icon: FiShield, title: "Seguridad", text: "Protegemos tu información" },
           { icon: FiHeadphones, title: "Soporte", text: "Estamos para ayudarte" },
           { icon: FiLock, title: "Transparencia", text: "Comprometidos con la confianza" },
         ].map((item) => (
-          <div key={item.title} className="flex items-center justify-center gap-5 py-4">
-            <item.icon className="h-10 w-10 text-[#07133d]" />
+          <div key={item.title} className="flex items-center gap-4 py-2 md:justify-center md:gap-5 md:py-4">
+            <item.icon className="h-8 w-8 text-[#07133d] md:h-10 md:w-10" />
             <div>
-              <h2 className="text-xl font-bold text-[#07133d]">{item.title}</h2>
-              <p className="text-sm text-gray-500">{item.text}</p>
+              <h2 className="text-lg font-bold text-[#07133d] md:text-xl">{item.title}</h2>
+              <p className="text-sm leading-tight text-gray-500">{item.text}</p>
             </div>
           </div>
         ))}

@@ -19,7 +19,6 @@ import {
   FiInfo,
   FiMapPin,
   FiSettings,
-  FiChevronRight,
   FiZap,
 } from "react-icons/fi";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -302,30 +301,44 @@ const InvoicesPage = () => {
               {filteredInvoices.map((invoice) => {
                 const Icon = FiZap;
                 return (
-                  <button
+                  <article
                     key={invoice.id}
-                    onClick={() => openInvoice(invoice.id)}
-                    className="flex w-full items-center gap-5 border-t border-gray-100 p-6 text-left"
+                    className="border-t border-gray-100 p-6"
                   >
-                    <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eef6ff]">
-                      <Icon className="h-9 w-9 text-[#0b82df]" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-bold text-[#07133d]">
-                        {invoice.title}
+                    <div className="flex w-full items-center gap-5 text-left">
+                      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eef6ff]">
+                        <Icon className="h-9 w-9 text-[#0b82df]" />
                       </span>
-                      <span className="mt-1 block text-gray-500">
-                        {invoice.period}
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-bold text-[#07133d]">
+                          {invoice.title}
+                        </span>
+                        <span className="mt-1 block text-gray-500">
+                          {invoice.period}
+                        </span>
+                        <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-600">
+                          {invoice.status}
+                        </span>
                       </span>
-                      <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-600">
-                        {invoice.status}
+                      <span className="text-3xl text-[#17446f]">
+                        {invoice.amountLabel}
                       </span>
-                    </span>
-                    <span className="text-3xl text-[#17446f]">
-                      {invoice.amountLabel}
-                    </span>
-                    <FiChevronRight className="h-6 w-6 text-gray-500" />
-                  </button>
+                    </div>
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => downloadInvoice(invoice.id)}
+                        className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#0b82df] font-bold text-[#0b82df] transition active:scale-[0.98]"
+                      >
+                        <FiDownload /> Descargar
+                      </button>
+                      <button
+                        onClick={() => openInvoice(invoice.id)}
+                        className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#0b82df] font-bold text-white transition active:scale-[0.98]"
+                      >
+                        <FiFileText /> Ver
+                      </button>
+                    </div>
+                  </article>
                 );
               })}
               {!loading && filteredInvoices.length === 0 && (
