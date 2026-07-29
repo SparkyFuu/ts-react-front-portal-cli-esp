@@ -1,6 +1,7 @@
 import apiClient from "@/api/apiClient";
 import type {
   PortalConsumptionResponse,
+  PortalHistoricalConsumptionResponse,
   PortalInvoicesResponse,
   PortalSuppliesResponse,
 } from "./types";
@@ -34,6 +35,16 @@ export const fetchPortalConsumption = async (
 ): Promise<PortalConsumptionResponse> => {
   const { data } = await apiClient.get<PortalConsumptionResponse>(
     "/spain/portal/client/consumption",
+    { params },
+  );
+  return data;
+};
+
+export const fetchPortalHistoricalConsumption = async (
+  params: PortalDataParams,
+): Promise<PortalHistoricalConsumptionResponse> => {
+  const { data } = await apiClient.get<PortalHistoricalConsumptionResponse>(
+    "/spain/portal/client/historical-consumption",
     { params },
   );
   return data;

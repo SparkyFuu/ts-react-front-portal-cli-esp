@@ -80,3 +80,39 @@ export type PortalConsumptionResponse = {
   };
   source: string;
 };
+
+export type PortalHistoricalConsumptionMonth = {
+  cups: string;
+  fechaInicioMesConsumo: string;
+  fechaFinMesConsumo: string;
+  codigoTarifaATR: string;
+  consumoEnergiaActivaEnWhP1: number;
+  consumoEnergiaActivaEnWhP2: number;
+  consumoEnergiaActivaEnWhP3: number;
+  consumoEnergiaActivaEnWhP4: number;
+  consumoEnergiaActivaEnWhP5: number;
+  consumoEnergiaActivaEnWhP6: number;
+  consumoEnergiaActivaTotalKwh: number;
+  codigoDHEquipoDeMedida: string;
+  codigoTipoLectura: string;
+};
+
+export type PortalHistoricalConsumptionResponse = {
+  cups: string;
+  dateFrom: string | null;
+  dateTo: string | null;
+  months: PortalHistoricalConsumptionMonth[];
+  summary: {
+    totalKwh: number;
+    averageKwh: number;
+    periods: {
+      p1: number;
+      p2: number;
+      p3: number;
+      p4: number;
+      p5: number;
+      p6: number;
+    };
+  };
+  source: string;
+};

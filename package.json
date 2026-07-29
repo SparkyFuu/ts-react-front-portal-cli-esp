@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start:local": "VITE_API_BASE_URL=$(grep '^VITE_API_BASE_URL=' .env.local | cut -d= -f2-) vite --port 3001 --mode local",
+    "start:local": "VITE_API_BASE_URL=$(grep '^VITE_API_BASE_URL=' .env.local | cut -d= -f2-) vite --port 3001 --mode development",
     "start:dev": "VITE_API_BASE_URL=$(grep '^VITE_API_BASE_URL=' .env | cut -d= -f2-) vite --port 3001 --mode dev",
     "build:dev": "tsc -b && VITE_API_BASE_URL=$(grep '^VITE_API_BASE_URL=' .env | cut -d= -f2-) vite build --mode dev",
     "build:develop": "npm run build:dev",

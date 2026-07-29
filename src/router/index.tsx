@@ -1,6 +1,7 @@
 import Layout from "@/layout";
 import ConsumptionPage from "@/pages/consumption";
 import DashboardPage from "@/pages/dashboard";
+import HistoricalConsumptionPage from "@/pages/historicalConsumption";
 import InvoicesPage from "@/pages/invoices";
 import LoginPage from "@/pages/login";
 import ChangePasswordPage from "@/pages/changePassword";
@@ -101,6 +102,16 @@ const AppRoutes: React.FC = () => {
             <ProtectedRoute>
               <Layout flush>
                 <ConsumptionPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/consumos-historicos"
+          element={
+            <ProtectedRoute>
+              <Layout flush>
+                <HistoricalConsumptionPage />
               </Layout>
             </ProtectedRoute>
           }
