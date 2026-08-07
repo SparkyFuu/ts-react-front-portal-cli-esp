@@ -37,13 +37,6 @@ type NavItem = {
   icon?: IconType;
 };
 
-const PUBLIC_NAV_ITEMS: NavItem[] = [
-  { label: "Inicio", href: "/login" },
-  { label: "Nosotros", href: "/nosotros" },
-  { label: "Servicios", href: "/servicios" },
-  { label: "Contacto", href: "/contacto" },
-];
-
 const PORTAL_NAV_ITEMS: NavItem[] = [
   { label: "Inicio", href: "/dashboard", icon: FiHome },
   { label: "Consumo", href: "/consumo", icon: FiBarChart2 },
@@ -77,7 +70,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const isPublic = location.pathname === "/login";
-  const navItems: NavItem[] = isPublic ? PUBLIC_NAV_ITEMS : PORTAL_NAV_ITEMS;
+  const navItems: NavItem[] = isPublic ? [] : PORTAL_NAV_ITEMS;
   const bottomItems =
     location.pathname === "/mas" ? AREA_BOTTOM_ITEMS : STANDARD_BOTTOM_ITEMS;
   const displayName = user.name?.trim() || user.email?.split("@")[0] || "Cliente";

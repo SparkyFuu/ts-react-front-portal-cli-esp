@@ -5,6 +5,7 @@ import HistoricalConsumptionPage from "@/pages/historicalConsumption";
 import InvoicesPage from "@/pages/invoices";
 import LoginPage from "@/pages/login";
 import ChangePasswordPage from "@/pages/changePassword";
+import NotFoundPage from "@/pages/notFound";
 import StaticPage from "@/pages/static";
 import { selectAuthOptions } from "@/pages/auth/features/authSlice";
 import React from "react";
@@ -15,6 +16,21 @@ import {
   Routes,
 } from "react-router-dom";
 import { useAppSelector } from "@/store/hooks";
+
+const STATIC_ROUTES = [
+  "/productos",
+  "/plan-amigo",
+  "/contacto",
+  "/ayuda",
+  "/noticias",
+  "/nosotros",
+  "/servicios",
+  "/profile",
+  "/mas",
+  "/metodos-de-pago",
+  "/notificaciones",
+  "/contratos",
+];
 
 const ProtectedRoute = ({
   children,
@@ -42,7 +58,9 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   if (auth.authenticated && auth.token) {
     return (
       <Navigate
-        to={auth.user.passwordChangeRequired ? "/change-password" : "/area-clientes"}
+        to={
+          auth.user.passwordChangeRequired ? "/change-password" : "/area-clientes"
+        }
         replace
       />
     );
@@ -126,14 +144,20 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="*"
-          element={
-            <Layout flush>
-              <StaticPage />
-            </Layout>
-          }
-        />
+        {STATIC_ROUTES.map((path) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <ProtectedRoute>
+                <Layout flush>
+                  <StaticPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+        ))}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
   );
