@@ -187,10 +187,9 @@ const LoginPage = () => {
               alt=""
               className="h-[24rem] w-[24rem] object-contain"
             />
-            <div className="mt-4 text-center font-['Comic_Sans_MS',cursive] text-4xl leading-tight text-[#0b82df]">
-              <p>Tú los conectas,</p>
-              <p>nosotros hacemos el resto.</p>
-              <div className="mx-auto mt-3 h-1 w-96 rounded-full bg-[#0b82df]" />
+            <div className="mt-4 text-center  text-4xl leading-tight text-[#0b82df]">
+              <p>Aquí esta toda</p>
+            <p>la información de tu suministro eléctrico</p>
             </div>
           </div>
         </div>
