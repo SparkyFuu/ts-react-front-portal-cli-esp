@@ -11,7 +11,6 @@ import {
   FiBarChart2,
   FiChevronDown,
   FiRefreshCw,
-  FiSearch,
   FiZap,
 } from "react-icons/fi";
 import {
@@ -55,7 +54,6 @@ const HistoricalConsumptionPage = () => {
     [user.cups],
   );
   const [selectedCups, setSelectedCups] = useState(accountCups[0] ?? "");
-  const [manualCups, setManualCups] = useState("");
   const [data, setData] = useState<PortalHistoricalConsumptionResponse | null>(
     null,
   );
@@ -65,7 +63,7 @@ const HistoricalConsumptionPage = () => {
     if (!selectedCups && accountCups[0]) setSelectedCups(accountCups[0]);
   }, [accountCups, selectedCups]);
 
-  const effectiveCups = (manualCups.trim() || selectedCups).toUpperCase();
+  const effectiveCups = selectedCups.toUpperCase();
   const chartData: ChartRow[] = useMemo(
     () =>
       (data?.months ?? []).map((item) => ({
@@ -97,6 +95,38 @@ const HistoricalConsumptionPage = () => {
     }
   };
 
+  useEffect(() => {
+    if (!effectiveCups) {
+      setData(null);
+      return;
+    }
+
+    let active = true;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const response = await fetchPortalHistoricalConsumption({
+          cups: effectiveCups,
+        });
+        if (active) setData(response);
+      } catch (error: unknown) {
+        if (active) {
+          setData(null);
+          toast.error(getErrorMessage(error));
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      active = false;
+    };
+  }, [effectiveCups]);
+
   return (
     <main className="min-h-screen bg-[#f6f9fc] pb-28 md:pb-12">
       <section className="border-b border-gray-200 bg-white px-6 py-8 md:px-16">
@@ -109,11 +139,11 @@ const HistoricalConsumptionPage = () => {
               Consulta por CUPS
             </h1>
             <p className="mt-3 max-w-2xl text-base text-gray-600 md:text-lg">
-              Histórico mensual obtenido desde SIPS CNMC para el punto de suministro seleccionado.
+              Histórico mensual del punto de suministro seleccionado.
             </p>
           </div>
 
-          <div className="grid gap-3 rounded-xl border border-gray-200 bg-[#fbfdff] p-3 md:grid-cols-[16rem_1fr_auto] md:items-center">
+          <div className="grid gap-3 rounded-xl border border-gray-200 bg-[#fbfdff] p-3 md:grid-cols-[18rem_auto] md:items-center">
             {accountCups.length > 1 ? (
               <label className="relative block">
                 <span className="sr-only">Seleccionar CUPS</span>
@@ -121,7 +151,6 @@ const HistoricalConsumptionPage = () => {
                   value={selectedCups}
                   onChange={(event) => {
                     setSelectedCups(event.target.value);
-                    setManualCups("");
                   }}
                   className="h-12 w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 pr-10 text-sm font-semibold text-[#07133d] outline-none transition focus:border-[#0b82df] focus:ring-4 focus:ring-[#0b82df]/15"
                 >
@@ -139,24 +168,13 @@ const HistoricalConsumptionPage = () => {
               </div>
             )}
 
-            <label className="relative block">
-              <span className="sr-only">Ingresar CUPS</span>
-              <FiSearch className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
-              <input
-                value={manualCups}
-                onChange={(event) => setManualCups(event.target.value)}
-                placeholder="Ingresar otro CUPS"
-                className="h-12 w-full rounded-lg border border-gray-200 bg-white pl-11 pr-4 text-sm font-semibold uppercase text-[#07133d] outline-none transition placeholder:normal-case placeholder:text-gray-400 focus:border-[#0b82df] focus:ring-4 focus:ring-[#0b82df]/15"
-              />
-            </label>
-
             <button
               onClick={loadHistoricalConsumption}
               disabled={loading || !effectiveCups}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-[#0b82df] px-5 font-bold text-white shadow-[0_14px_30px_rgba(11,130,223,0.22)] transition hover:bg-[#076fc0] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/20 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:shadow-none"
             >
               <FiRefreshCw className={loading ? "h-5 w-5 animate-spin" : "h-5 w-5"} />
-              Consultar
+              Actualizar
             </button>
           </div>
         </div>
@@ -225,9 +243,9 @@ const HistoricalConsumptionPage = () => {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-gray-200 text-center text-gray-500">
+                <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-gray-200 text-center text-gray-500">
                 {loading
-                  ? "Consultando CNMC SIPS..."
+                  ? "Consultando tus consumos..."
                   : "No hay consumos históricos para mostrar."}
               </div>
             )}

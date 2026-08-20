@@ -5,8 +5,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { selectUser } from "@/pages/auth/features/authSlice";
-import { fetchPortalConsumption } from "@/pages/portalClient/services";
-import type { PortalConsumptionResponse } from "@/pages/portalClient/types";
+import {
+  fetchPortalConsumption,
+  fetchPortalSupplies,
+} from "@/pages/portalClient/services";
+import type {
+  PortalConsumptionResponse,
+  PortalSupply,
+} from "@/pages/portalClient/types";
 import { useAppSelector } from "@/store/hooks";
 import { useEffect, useMemo, useState } from "react";
 import Select, { type SingleValue, type StylesConfig } from "react-select";
@@ -39,13 +45,18 @@ type RangeSelectOption = {
   label: string;
   value: RangeOption;
 };
+type SupplySelectOption = {
+  label: string;
+  value: string;
+  address?: string;
+};
 
 const rangeOptions: RangeSelectOption[] = [
   { label: "Últ. 12 meses", value: 12 },
   { label: "Últ. 6 meses", value: 6 },
 ];
 
-const selectStyles: StylesConfig<RangeSelectOption, false> = {
+const createSelectStyles = <Option,>(): StylesConfig<Option, false> => ({
   control: (base, state) => ({
     ...base,
     minHeight: "40px",
@@ -75,17 +86,50 @@ const selectStyles: StylesConfig<RangeSelectOption, false> = {
     cursor: "pointer",
   }),
   singleValue: (base) => ({ ...base, color: "#07133d", fontWeight: 700 }),
-};
+});
+
+const rangeSelectStyles = createSelectStyles<RangeSelectOption>();
+const supplySelectStyles = createSelectStyles<SupplySelectOption>();
 
 const ConsumptionPage = () => {
   const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const firstName = user.name?.split(" ")[0] || "Cliente";
-  const cups = Array.isArray(user.cups) ? user.cups[0] : undefined;
+  const accountCups = useMemo(
+    () => (Array.isArray(user.cups) ? user.cups.filter(Boolean) : []),
+    [user.cups],
+  );
   const [range, setRange] = useState<RangeOption>(12);
   const [selectedMonth, setSelectedMonth] = useState<string>("FEB");
+  const [supplies, setSupplies] = useState<PortalSupply[]>([]);
+  const [selectedCups, setSelectedCups] = useState(accountCups[0] ?? "");
   const [data, setData] = useState<PortalConsumptionResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const supplyOptions = useMemo<SupplySelectOption[]>(() => {
+    const supplyMap = new Map<string, PortalSupply>();
+
+    supplies.forEach((supply) => {
+      if (supply.cups) supplyMap.set(supply.cups, supply);
+    });
+    accountCups.forEach((cups) => {
+      if (!supplyMap.has(cups)) {
+        supplyMap.set(cups, { cups, address: cups });
+      }
+    });
+
+    return Array.from(supplyMap.values()).map((supply) => ({
+      label:
+        supply.address && supply.address !== supply.cups
+          ? `${supply.cups} · ${supply.address}`
+          : supply.cups,
+      value: supply.cups,
+      address: supply.address,
+    }));
+  }, [accountCups, supplies]);
+  const selectedSupplyOption =
+    supplyOptions.find((option) => option.value === selectedCups) ??
+    supplyOptions[0] ??
+    null;
   const visibleMonths = useMemo(
     () =>
       (data?.months ?? []).slice(range === 6 ? -6 : 0).map((item) => ({
@@ -118,13 +162,45 @@ const ConsumptionPage = () => {
       : 0;
 
   useEffect(() => {
+    if (!selectedCups && accountCups[0]) setSelectedCups(accountCups[0]);
+  }, [accountCups, selectedCups]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadSupplies = async () => {
+      try {
+        const response = await fetchPortalSupplies();
+        if (!active) return;
+
+        setSupplies(response.supplies ?? []);
+        const firstCups = response.supplies?.[0]?.cups || accountCups[0] || "";
+        if (firstCups) setSelectedCups((current) => current || firstCups);
+      } catch {
+        if (active) setSupplies([]);
+      }
+    };
+
+    loadSupplies();
+
+    return () => {
+      active = false;
+    };
+  }, [accountCups]);
+
+  useEffect(() => {
+    if (!selectedCups) {
+      setData(null);
+      return;
+    }
+
     let active = true;
 
     const loadConsumption = async () => {
       setLoading(true);
 
       try {
-        const response = await fetchPortalConsumption({ cups });
+        const response = await fetchPortalConsumption({ cups: selectedCups });
         if (active) setData(response);
       } catch {
         if (active) {
@@ -141,7 +217,7 @@ const ConsumptionPage = () => {
     return () => {
       active = false;
     };
-  }, [cups]);
+  }, [selectedCups]);
 
   const formatKwh = (value: number) =>
     value.toLocaleString("es-ES", {
@@ -155,9 +231,6 @@ const ConsumptionPage = () => {
       if (typeof month === "string") setSelectedMonth(month);
     }
   };
-
-  const invoicePreview = (invoiceId: string) =>
-    navigate(`/facturas?invoice=${encodeURIComponent(invoiceId)}`);
 
   const showPeakHours = () => {
     setRange(6);
@@ -204,6 +277,21 @@ const ConsumptionPage = () => {
             <div className="flex items-center gap-7">
               <h2 className="text-2xl font-bold text-[#0b82df]">Mensual</h2>
               <span className="h-8 w-px bg-gray-200" />
+              <div className="min-w-64 rounded-lg px-2 transition hover:bg-[#eef6ff] md:min-w-80">
+                <Select<SupplySelectOption, false>
+                  aria-label="Seleccionar CUPS"
+                  className="w-64 md:w-80"
+                  options={supplyOptions}
+                  value={selectedSupplyOption}
+                  onChange={(option: SingleValue<SupplySelectOption>) => {
+                    if (option) setSelectedCups(option.value);
+                  }}
+                  styles={supplySelectStyles}
+                  isSearchable={supplyOptions.length > 4}
+                  placeholder="Seleccionar CUPS"
+                  noOptionsMessage={() => "Sin CUPS asociados"}
+                />
+              </div>
               <div className="flex min-w-44 items-center gap-2 rounded-lg px-2 transition hover:bg-[#eef6ff] md:min-w-48 md:gap-3">
                 <FiCalendar />
                 <Select<RangeSelectOption, false>
@@ -214,7 +302,7 @@ const ConsumptionPage = () => {
                   onChange={(option: SingleValue<RangeSelectOption>) => {
                     if (option) setRange(option.value);
                   }}
-                  styles={selectStyles}
+                  styles={rangeSelectStyles}
                   isSearchable={false}
                 />
               </div>
@@ -313,11 +401,9 @@ const ConsumptionPage = () => {
           {(data?.invoices ?? []).slice(0, 3).map((invoice) => {
             const Icon = FiZap;
             return (
-              <button
+              <div
                 key={invoice.id}
-                onClick={() => invoicePreview(invoice.id)}
-                className="flex w-full items-center gap-4 border-b border-gray-100 p-7 text-left transition hover:bg-[#f7fbff]"
-                title={`Ver detalle de factura ${invoice.id}`}
+                className="flex w-full items-center gap-4 border-b border-gray-100 p-7 text-left"
               >
                 <span className="h-3 w-3 rounded-full bg-[#0b82df]" />
                 <Icon className="h-8 w-8 text-amber-500" />
@@ -326,8 +412,7 @@ const ConsumptionPage = () => {
                   <p className="text-sm text-gray-500">{invoice.period}</p>
                 </div>
                 <p className="text-3xl text-[#17446f]">{invoice.amountLabel}</p>
-                <FiChevronRight className="h-6 w-6 text-gray-500" />
-              </button>
+              </div>
             );
           })}
           {!loading && (data?.invoices ?? []).length === 0 && (

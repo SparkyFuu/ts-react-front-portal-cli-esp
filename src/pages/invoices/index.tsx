@@ -15,13 +15,12 @@ import Select, { type SingleValue, type StylesConfig } from "react-select";
 import {
   FiDownload,
   FiExternalLink,
-  FiFileText,
   FiInfo,
   FiMapPin,
   FiSettings,
   FiZap,
 } from "react-icons/fi";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 type SelectOption = {
@@ -71,7 +70,6 @@ const iconSelectStyles = makeSelectStyles<SelectOption>("42px");
 
 const InvoicesPage = () => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const user = useAppSelector(selectUser);
   const supplyOptions: SelectOption[] = useMemo(() => {
     const cups = Array.isArray(user.cups) ? user.cups : [];
@@ -87,6 +85,9 @@ const InvoicesPage = () => {
   const [attachPdf, setAttachPdf] = useState(true);
   const [invoices, setInvoices] = useState<PortalInvoice[]>([]);
   const [loading, setLoading] = useState(false);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(
+    null,
+  );
   const selectedSupply =
     supplyOptions.find((option) => option.value === supplyFilter) ??
     supplyOptions[0];
@@ -126,26 +127,16 @@ const InvoicesPage = () => {
   }, [selectedSupply?.value]);
 
   const filteredInvoices = invoices;
-
-  useEffect(() => {
-    const invoiceId = searchParams.get("invoice");
-    if (!invoiceId || loading || !filteredInvoices.length) return;
-
-    const exists = filteredInvoices.some((invoice) => invoice.id === invoiceId);
-    if (!exists) return;
-
-    openInvoice(invoiceId);
-    setSearchParams((current) => {
-      current.delete("invoice");
-      return current;
-    });
-  }, [filteredInvoices, loading, searchParams, setSearchParams]);
+  const downloadingInvoice = filteredInvoices.find(
+    (invoice) => invoice.id === downloadingInvoiceId,
+  );
 
   const downloadInvoice = async (invoiceId: string) => {
     const invoice = filteredInvoices.find((item) => item.id === invoiceId);
-    if (!invoice) return;
+    if (!invoice || downloadingInvoiceId) return;
 
     try {
+      setDownloadingInvoiceId(invoiceId);
       const blob = await downloadPortalInvoicePdf(invoiceId);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -156,22 +147,34 @@ const InvoicesPage = () => {
       toast.success(`Factura ${invoice.id} descargada`);
     } catch {
       toast.error("No pudimos descargar el PDF de la factura.");
-    }
-  };
-
-  const openInvoice = async (invoiceId: string) => {
-    try {
-      const blob = await downloadPortalInvoicePdf(invoiceId);
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, "_blank", "noopener,noreferrer");
-      window.setTimeout(() => window.URL.revokeObjectURL(url), 30000);
-    } catch {
-      toast.error("No pudimos abrir la factura.");
+    } finally {
+      setDownloadingInvoiceId(null);
     }
   };
 
   return (
     <main className="px-6 py-8 pb-28 md:px-16 md:py-10 md:pb-10">
+      {downloadingInvoiceId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#07133d]/45 px-6 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-[0_30px_80px_rgba(7,19,61,0.28)]">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#eef6ff] text-[#0b82df]">
+              <FiDownload className="h-10 w-10 animate-bounce" />
+            </div>
+            <h2 className="mt-6 text-2xl font-bold text-[#07133d]">
+              Descargando factura
+            </h2>
+            <p className="mt-3 text-gray-600">
+              {downloadingInvoice
+                ? `Preparando ${downloadingInvoice.id} para descargar.`
+                : "Preparando tu archivo para descargar."}
+            </p>
+            <div className="mt-6 h-2 overflow-hidden rounded-full bg-[#dbeeff]">
+              <div className="h-full w-1/2 animate-[download-progress_1.1s_ease-in-out_infinite] rounded-full bg-[#0b82df]" />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div>
           <h1 className="text-4xl font-bold text-[#07133d] md:text-5xl">Facturas</h1>
@@ -304,19 +307,29 @@ const InvoicesPage = () => {
                         {invoice.amountLabel}
                       </span>
                     </div>
-                    <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div className="mt-5 grid grid-cols-1 gap-3">
                       <button
                         onClick={() => downloadInvoice(invoice.id)}
-                        className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#0b82df] font-bold text-[#0b82df] transition active:scale-[0.98]"
+                        disabled={Boolean(downloadingInvoiceId)}
+                        className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#0b82df] font-bold text-[#0b82df] transition hover:bg-[#eef6ff] active:scale-[0.98] disabled:cursor-wait disabled:border-[#9acbf4] disabled:bg-[#eef6ff] disabled:text-[#5aaeea]"
                       >
-                        <FiDownload /> Descargar
+                        <FiDownload
+                          className={
+                            downloadingInvoiceId === invoice.id
+                              ? "h-5 w-5 animate-bounce"
+                              : "h-5 w-5"
+                          }
+                        />
+                        {downloadingInvoiceId === invoice.id
+                          ? "Descargando..."
+                          : "Descargar"}
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => openInvoice(invoice.id)}
                         className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#0b82df] font-bold text-white transition active:scale-[0.98]"
                       >
                         <FiFileText /> Ver
-                      </button>
+                      </button> */}
                     </div>
                   </article>
                 );
@@ -384,14 +397,25 @@ const InvoicesPage = () => {
                               <button
                                 onClick={() => downloadInvoice(invoice.id)}
                                 aria-label="Descargar factura"
-                                className="rounded-md p-2 transition hover:bg-[#eef6ff] hover:text-[#076fc0] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15"
+                                disabled={Boolean(downloadingInvoiceId)}
+                                className="rounded-md p-2 transition hover:bg-[#eef6ff] hover:text-[#076fc0] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15 disabled:cursor-wait disabled:bg-[#eef6ff] disabled:text-[#5aaeea]"
                               >
-                                <FiDownload className="h-5 w-5" />
+                                <FiDownload
+                                  className={
+                                    downloadingInvoiceId === invoice.id
+                                      ? "h-5 w-5 animate-bounce"
+                                      : "h-5 w-5"
+                                  }
+                                />
                               </button>
                             </TooltipTrigger>
-                            <TooltipContent>Descargar factura</TooltipContent>
+                            <TooltipContent>
+                              {downloadingInvoiceId === invoice.id
+                                ? "Descargando factura..."
+                                : "Descargar factura"}
+                            </TooltipContent>
                           </Tooltip>
-                          <Tooltip>
+                          {/* <Tooltip>
                             <TooltipTrigger asChild>
                               <button
                                 onClick={() => openInvoice(invoice.id)}
@@ -402,7 +426,7 @@ const InvoicesPage = () => {
                               </button>
                             </TooltipTrigger>
                             <TooltipContent>Ver detalle de factura</TooltipContent>
-                          </Tooltip>
+                          </Tooltip> */}
                         </div>
                       </td>
                     </tr>
