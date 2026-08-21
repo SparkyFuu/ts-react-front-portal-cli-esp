@@ -10,7 +10,13 @@ import {
 } from "react-icons/fi";
 import type { IconType } from "react-icons";
 import { useDispatch } from "react-redux";
-import { logout, selectUser } from "@/pages/auth/features/authSlice";
+import {
+  logout,
+  selectAuthOptions,
+  selectUser,
+  setPortalViewAsUser,
+  type AuthUser,
+} from "@/pages/auth/features/authSlice";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,11 +27,48 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAppSelector } from "@/store/hooks";
+import { useEffect, useMemo, useState } from "react";
+import Select, { type SingleValue, type StylesConfig } from "react-select";
+import { fetchPortalViewerAccounts } from "@/pages/portalClient/services";
 
 type NavItem = {
   label: string;
   href: string;
   icon?: IconType;
+};
+
+type AccountOption = {
+  label: string;
+  value: number | "self";
+  user: AuthUser | null;
+};
+
+const accountSelectStyles: StylesConfig<AccountOption, false> = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: "42px",
+    borderColor: state.isFocused ? "#0b82df" : "#dbeafe",
+    borderRadius: "10px",
+    boxShadow: state.isFocused ? "0 0 0 4px rgba(11,130,223,0.12)" : "none",
+    cursor: "pointer",
+  }),
+  indicatorSeparator: () => ({ display: "none" }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 80,
+    borderRadius: "12px",
+    overflow: "hidden",
+  }),
+  option: (base, state) => ({
+    ...base,
+    background: state.isSelected
+      ? "#0b82df"
+      : state.isFocused
+        ? "#eef6ff"
+        : "white",
+    color: state.isSelected ? "white" : "#07133d",
+    cursor: "pointer",
+  }),
 };
 
 const PORTAL_NAV_ITEMS: NavItem[] = [
@@ -52,7 +95,10 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
+  const auth = useAppSelector(selectAuthOptions);
   const user = useAppSelector(selectUser);
+  const [portalAccounts, setPortalAccounts] = useState<AuthUser[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(false);
   const isPublic = location.pathname === "/login";
   const navItems: NavItem[] = isPublic ? [] : PORTAL_NAV_ITEMS;
   const bottomItems =
@@ -70,6 +116,70 @@ const Navbar = () => {
     dispatch(logout());
     navigate("/login");
   };
+  const accountOptions = useMemo<AccountOption[]>(
+    () => [
+      {
+        label: `${user.name || user.email || "Mi cuenta"} (mi sesión)`,
+        value: "self",
+        user: null,
+      },
+      ...portalAccounts
+        .filter((account) => Number(account.id) !== Number(user.id))
+        .map((account) => ({
+          label: `${account.name || account.email || `Cliente ${account.id}`} · ${
+            account.email || "sin email"
+          }`,
+          value: Number(account.id),
+          user: account,
+        })),
+    ],
+    [portalAccounts, user.email, user.id, user.name],
+  );
+  const selectedAccountOption = auth.viewAsUser?.id
+    ? accountOptions.find(
+        (option) => Number(option.value) === Number(auth.viewAsUser?.id),
+      ) || {
+        label: `${auth.viewAsUser.name || auth.viewAsUser.email || `Cliente ${auth.viewAsUser.id}`} · ${
+          auth.viewAsUser.email || "sin email"
+        }`,
+        value: Number(auth.viewAsUser.id),
+        user: auth.viewAsUser,
+      }
+    : accountOptions.find((option) => option.value === "self") ||
+      accountOptions[0];
+
+  useEffect(() => {
+    if (!auth.viewAsUser || (!isPublic && user.isAdmin)) return;
+
+    dispatch(setPortalViewAsUser(null));
+  }, [auth.viewAsUser, dispatch, isPublic, user.isAdmin]);
+
+  useEffect(() => {
+    if (isPublic || !user.isAdmin) {
+      setPortalAccounts([]);
+      return;
+    }
+
+    let active = true;
+
+    const loadAccounts = async () => {
+      setAccountsLoading(true);
+      try {
+        const response = await fetchPortalViewerAccounts();
+        if (active) setPortalAccounts(response.rows);
+      } catch {
+        if (active) setPortalAccounts([]);
+      } finally {
+        if (active) setAccountsLoading(false);
+      }
+    };
+
+    loadAccounts();
+
+    return () => {
+      active = false;
+    };
+  }, [dispatch, isPublic, user.isAdmin]);
 
   return (
     <>
@@ -194,6 +304,34 @@ const Navbar = () => {
       </div>
 
     </header>
+    {!isPublic && user.isAdmin && (
+      <section className="sticky top-24 z-30 border-b border-[#dbeafe] bg-[#f7fbff] px-6 py-3 md:px-10 lg:px-14">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#0b82df]">
+              Vista administrador
+            </p>
+            <p className="text-sm text-[#07133d]">
+              Selecciona un cliente para ver el portal tal como lo ve esa cuenta.
+            </p>
+          </div>
+          <div className="min-w-0 md:w-[30rem]">
+            <Select<AccountOption, false>
+              aria-label="Seleccionar cliente del portal"
+              options={accountOptions}
+              value={selectedAccountOption}
+              isLoading={accountsLoading}
+              isSearchable
+              styles={accountSelectStyles}
+              noOptionsMessage={() => "No hay clientes disponibles"}
+              onChange={(option: SingleValue<AccountOption>) => {
+                dispatch(setPortalViewAsUser(option?.user || null));
+              }}
+            />
+          </div>
+        </div>
+      </section>
+    )}
     {!isPublic && (
       <nav className="fixed inset-x-0 bottom-0 z-50 grid h-20 grid-cols-3 border-t border-gray-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,38,71,0.08)] backdrop-blur md:hidden">
         {bottomItems.map((item) => {

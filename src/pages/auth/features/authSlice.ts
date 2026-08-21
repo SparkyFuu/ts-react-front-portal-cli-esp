@@ -13,6 +13,7 @@ export type AuthUser = {
   email?: string;
   cif?: string | null;
   cups?: string[];
+  isAdmin?: boolean;
   passwordChangeRequired?: boolean;
   privileges?: string[];
   [key: string]: unknown;
@@ -34,6 +35,7 @@ export interface AuthState {
   token: string;
   refreshToken: string;
   user: AuthUser;
+  viewAsUser: AuthUser | null;
   sessionExpireModalVisible: boolean;
   decodedToken: DecodedToken;
   timerSession: number | null;
@@ -46,6 +48,7 @@ const initialState: AuthState = {
   token: "",
   refreshToken: "",
   user: {},
+  viewAsUser: null,
   sessionExpireModalVisible: false,
   decodedToken: {},
   timerSession: null,
@@ -109,6 +112,7 @@ export const authSlice = createSlice({
       state.token = action.payload.token;
       state.refreshToken = action.payload.refreshToken || "";
       state.user = action.payload.user;
+      state.viewAsUser = null;
       state.error = null;
 
       try {
@@ -124,6 +128,7 @@ export const authSlice = createSlice({
       state.token = "";
       state.refreshToken = "";
       state.user = {};
+      state.viewAsUser = null;
       state.error = null;
       state.loading = false;
 
@@ -135,6 +140,10 @@ export const authSlice = createSlice({
 
     setAuthenticate: (state, action: PayloadAction<boolean>) => {
       state.authenticated = action.payload;
+    },
+
+    setPortalViewAsUser: (state, action: PayloadAction<AuthUser | null>) => {
+      state.viewAsUser = action.payload;
     },
 
     setTimerSession: (state, action: PayloadAction<number>) => {
@@ -163,6 +172,7 @@ export const authSlice = createSlice({
         state.token = action.payload.token;
         state.refreshToken = action.payload.refreshToken || "";
         state.user = action.payload.user;
+        state.viewAsUser = null;
         state.error = null;
 
         try {
@@ -181,6 +191,7 @@ export const authSlice = createSlice({
       state.token = "";
       state.refreshToken = "";
       state.user = {};
+      state.viewAsUser = null;
       state.decodedToken = {};
       state.error =
         (action.payload as string) ||
@@ -197,6 +208,7 @@ export const {
   hideSessionExpireModal,
   setTimerSession,
   setAuthenticate,
+  setPortalViewAsUser,
 } = authSlice.actions;
 
 export default authSlice.reducer;
@@ -210,5 +222,8 @@ export const selectRefreshToken = (state: { auth: AuthState }) =>
   state.auth.refreshToken;
 
 export const selectUser = (state: { auth: AuthState }) => state.auth.user;
+
+export const selectPortalUser = (state: { auth: AuthState }) =>
+  state.auth.viewAsUser || state.auth.user;
 
 export const selectAuthOptions = (state: { auth: AuthState }) => state.auth;

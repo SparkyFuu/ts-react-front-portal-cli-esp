@@ -3,7 +3,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { selectUser } from "@/pages/auth/features/authSlice";
+import { selectPortalUser } from "@/pages/auth/features/authSlice";
 import {
   downloadPortalInvoicePdf,
   fetchPortalInvoices,
@@ -70,7 +70,7 @@ const iconSelectStyles = makeSelectStyles<SelectOption>("42px");
 
 const InvoicesPage = () => {
   const navigate = useNavigate();
-  const user = useAppSelector(selectUser);
+  const user = useAppSelector(selectPortalUser);
   const supplyOptions: SelectOption[] = useMemo(() => {
     const cups = Array.isArray(user.cups) ? user.cups : [];
 

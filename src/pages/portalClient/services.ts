@@ -4,6 +4,7 @@ import type {
   PortalHistoricalConsumptionResponse,
   PortalInvoicesResponse,
   PortalSuppliesResponse,
+  PortalViewerAccountsResponse,
 } from "./types";
 
 type PortalDataParams = {
@@ -19,6 +20,14 @@ export const fetchPortalSupplies = async (): Promise<PortalSuppliesResponse> => 
   );
   return data;
 };
+
+export const fetchPortalViewerAccounts =
+  async (): Promise<PortalViewerAccountsResponse> => {
+    const { data } = await apiClient.get<PortalViewerAccountsResponse>(
+      "/spain/portal/auth/portal-accounts",
+    );
+    return data;
+  };
 
 export const fetchPortalInvoices = async (
   params: PortalDataParams,

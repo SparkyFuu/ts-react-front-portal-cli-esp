@@ -1,4 +1,4 @@
-import { selectUser } from "@/pages/auth/features/authSlice";
+import { selectPortalUser } from "@/pages/auth/features/authSlice";
 import { fetchPortalHistoricalConsumption } from "@/pages/portalClient/services";
 import type {
   PortalHistoricalConsumptionMonth,
@@ -54,7 +54,7 @@ type HistoricalConsumptionPageProps = {
 const HistoricalConsumptionPage = ({
   embedded = false,
 }: HistoricalConsumptionPageProps) => {
-  const user = useAppSelector(selectUser);
+  const user = useAppSelector(selectPortalUser);
   const accountCups = useMemo(
     () => (Array.isArray(user.cups) ? user.cups.filter(Boolean) : []),
     [user.cups],

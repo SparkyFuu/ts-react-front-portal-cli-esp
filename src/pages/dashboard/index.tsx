@@ -9,7 +9,7 @@ import {
   quickLinks,
   supportCards,
 } from "@/data/portalData";
-import { selectUser } from "@/pages/auth/features/authSlice";
+import { selectPortalUser } from "@/pages/auth/features/authSlice";
 import { fetchPublicBlogs, resolveBlogImageUrl } from "@/pages/blogs/services";
 import type { Blog } from "@/pages/blogs/types";
 import { fetchPortalSupplies } from "@/pages/portalClient/services";
@@ -41,7 +41,7 @@ const formatBlogDate = (value?: string | null) => {
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const user = useAppSelector(selectUser);
+  const user = useAppSelector(selectPortalUser);
   const firstName = user.name?.split(" ")[0] || "Cliente";
   const cups = Array.isArray(user.cups) ? user.cups : [];
   const [supplies, setSupplies] = useState<PortalSupply[]>([]);
@@ -68,7 +68,7 @@ const DashboardPage = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [user.id]);
 
   useEffect(() => {
     let active = true;

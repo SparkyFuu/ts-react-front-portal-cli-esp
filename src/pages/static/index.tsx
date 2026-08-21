@@ -1,4 +1,4 @@
-import { selectUser } from "@/pages/auth/features/authSlice";
+import { selectPortalUser } from "@/pages/auth/features/authSlice";
 import {
   fetchPublicBlogBySlug,
   fetchPublicBlogs,
@@ -43,7 +43,7 @@ const formatDate = (value?: string | null) => {
 const StaticPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = useAppSelector(selectUser);
+  const user = useAppSelector(selectPortalUser);
   const title = titleByPath[location.pathname] ?? "Portal ENERGYASSET";
   const query = new URLSearchParams(location.search);
   const newsSlug = query.get("slug");
@@ -115,7 +115,7 @@ const StaticPage = () => {
     return () => {
       active = false;
     };
-  }, [location.pathname]);
+  }, [location.pathname, user.id]);
 
   const contactActions = (
     <div className="mt-8 grid gap-4 md:grid-cols-3">

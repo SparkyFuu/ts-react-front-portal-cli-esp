@@ -3,6 +3,9 @@ import { toast } from "react-toastify";
 
 type AuthStateShape = {
   token: string;
+  viewAsUser?: {
+    id?: number;
+  } | null;
 };
 
 type AuthHandlers = {
@@ -26,6 +29,18 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  const viewAsAccountId = authHandlers?.getAuthState()?.viewAsUser?.id;
+  const url = config.url || "";
+  const isPortalClientRequest =
+    url.includes("/spain/portal/client/") || url.startsWith("/client/");
+
+  if (viewAsAccountId && isPortalClientRequest) {
+    config.params = {
+      ...(config.params || {}),
+      accountId: viewAsAccountId,
+    };
   }
 
   return config;

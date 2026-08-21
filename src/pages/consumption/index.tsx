@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { selectUser } from "@/pages/auth/features/authSlice";
+import { selectPortalUser } from "@/pages/auth/features/authSlice";
 import HistoricalConsumptionPage from "@/pages/historicalConsumption";
 import {
   fetchPortalConsumption,
@@ -94,7 +94,7 @@ const supplySelectStyles = createSelectStyles<SupplySelectOption>();
 
 const ConsumptionPage = () => {
   const navigate = useNavigate();
-  const user = useAppSelector(selectUser);
+  const user = useAppSelector(selectPortalUser);
   const firstName = user.name?.split(" ")[0] || "Cliente";
   const accountCups = useMemo(
     () => (Array.isArray(user.cups) ? user.cups.filter(Boolean) : []),

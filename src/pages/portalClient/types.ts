@@ -56,6 +56,19 @@ export type PortalSuppliesResponse = {
   source: string;
 };
 
+export type PortalViewerAccountsResponse = {
+  rows: Array<{
+    id: number;
+    email: string;
+    name: string;
+    cif?: string | null;
+    cups?: string[];
+    isAdmin?: boolean;
+    passwordChangeRequired?: boolean;
+  }>;
+  count: number;
+};
+
 export type PortalInvoicesResponse = {
   cups: string;
   invoices: PortalInvoice[];
