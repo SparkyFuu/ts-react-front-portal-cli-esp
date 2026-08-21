@@ -47,7 +47,13 @@ const periodColors = [
   "#64748b",
 ];
 
-const HistoricalConsumptionPage = () => {
+type HistoricalConsumptionPageProps = {
+  embedded?: boolean;
+};
+
+const HistoricalConsumptionPage = ({
+  embedded = false,
+}: HistoricalConsumptionPageProps) => {
   const user = useAppSelector(selectUser);
   const accountCups = useMemo(
     () => (Array.isArray(user.cups) ? user.cups.filter(Boolean) : []),
@@ -127,8 +133,8 @@ const HistoricalConsumptionPage = () => {
     };
   }, [effectiveCups]);
 
-  return (
-    <main className="min-h-screen bg-[#f6f9fc] pb-28 md:pb-12">
+  const content = (
+    <>
       <section className="border-b border-gray-200 bg-white px-6 py-8 md:px-16">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -340,8 +346,18 @@ const HistoricalConsumptionPage = () => {
           </div>
         </div>
       </section>
-    </main>
+    </>
   );
+
+  if (embedded) {
+    return (
+      <section id="historico-consumos" className="bg-[#f6f9fc]">
+        {content}
+      </section>
+    );
+  }
+
+  return <main className="min-h-screen bg-[#f6f9fc] pb-28 md:pb-12">{content}</main>;
 };
 
 const Metric = ({

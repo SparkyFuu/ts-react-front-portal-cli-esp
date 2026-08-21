@@ -6,12 +6,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  customer,
-  news,
   quickLinks,
   supportCards,
 } from "@/data/portalData";
 import { selectUser } from "@/pages/auth/features/authSlice";
+import { fetchPublicBlogs, resolveBlogImageUrl } from "@/pages/blogs/services";
+import type { Blog } from "@/pages/blogs/types";
 import { fetchPortalSupplies } from "@/pages/portalClient/services";
 import type { PortalSupply } from "@/pages/portalClient/types";
 import { useAppSelector } from "@/store/hooks";
@@ -20,8 +20,6 @@ import { useEffect, useState } from "react";
 import {
   FiArrowRight,
   FiBarChart2,
-  FiBell,
-  FiCreditCard,
   FiFileText,
   FiHeadphones,
   FiMail,
@@ -30,12 +28,25 @@ import {
 import { FaWhatsapp } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
+const formatBlogDate = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
 const DashboardPage = () => {
   const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const firstName = user.name?.split(" ")[0] || "Cliente";
   const cups = Array.isArray(user.cups) ? user.cups : [];
   const [supplies, setSupplies] = useState<PortalSupply[]>([]);
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [blogsLoading, setBlogsLoading] = useState(false);
   const areaTitle = firstName.toLowerCase().endsWith("a")
     ? "Bienvenida a tu"
     : "Bienvenido a tu";
@@ -59,6 +70,28 @@ const DashboardPage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadBlogs = async () => {
+      setBlogsLoading(true);
+      try {
+        const response = await fetchPublicBlogs({ limit: 3 });
+        if (active) setBlogs(response.rows);
+      } catch {
+        if (active) setBlogs([]);
+      } finally {
+        if (active) setBlogsLoading(false);
+      }
+    };
+
+    loadBlogs();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const handleSupportAction = (title: string, value: string) => {
     if (title === "WhatsApp") {
       openWhatsapp(value, "Hola, necesito ayuda con mi portal de cliente.");
@@ -73,9 +106,7 @@ const DashboardPage = () => {
 
   const quickLinkRoute = (link: string) => {
     if (link.includes("facturas")) return "/facturas";
-    if (link.includes("consumos")) return "/consumo";
-    if (link.includes("pago")) return "/metodos-de-pago";
-    if (link.includes("Notificaciones")) return "/notificaciones";
+    if (link.includes("consumos")) return "/dashboard";
     if (link.includes("contratos")) return "/contratos";
     return "/profile";
   };
@@ -84,7 +115,7 @@ const DashboardPage = () => {
     <main className="bg-white pb-24 md:pb-0">
       <section className="relative overflow-hidden border-b border-gray-100 px-6 py-8 md:px-16 md:py-12">
         <div className="absolute right-0 top-8 h-72 w-72 rounded-full bg-[#edf7ff] md:top-0 md:h-full md:w-3/5 md:rounded-bl-[18rem]" />
-        <div className="relative grid grid-cols-[1fr_11rem] items-center gap-2 md:gap-8 lg:grid-cols-[1fr_28rem_18rem]">
+        <div className="relative grid grid-cols-[1fr_11rem] items-center gap-2 md:gap-8 lg:grid-cols-[1fr_28rem]">
           <div>
             <p className="text-xl font-bold text-[#07133d] md:text-2xl">
               ¡Hola, {firstName}! 👋
@@ -110,19 +141,6 @@ const DashboardPage = () => {
 
           <img src={piggyImage} alt="" className="mx-auto h-48 w-48 object-contain md:h-72 md:w-72" />
 
-          <div className="col-span-2 hidden rounded-xl bg-white p-7 shadow-[0_18px_45px_rgba(15,38,71,0.12)] md:col-span-1 md:block">
-            <p className="font-bold text-[#07133d]">Tu ahorro estimado</p>
-            <p className="mt-3 text-4xl font-bold text-emerald-500">
-              {customer.estimatedSavings}
-            </p>
-            <p className="mt-2 text-gray-500">desde el último mes</p>
-            <button
-              onClick={() => navigate("/consumo")}
-              className="mt-7 flex h-11 w-full items-center justify-center gap-2 rounded-md border border-[#0b82df] text-sm font-bold text-[#0b82df] transition hover:bg-[#0b82df] hover:text-white focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15"
-            >
-              <FiBarChart2 /> Ver mi consumo
-            </button>
-          </div>
         </div>
       </section>
 
@@ -182,7 +200,9 @@ const DashboardPage = () => {
                 Descubre nuestras tarifas personalizadas y empieza a pagar menos por tu luz.
               </p>
               <button
-                onClick={() => navigate("/productos")}
+                onClick={() => {
+                  window.location.href = "https://energyasset.es/tarifa";
+                }}
                 className="mt-6 rounded-lg bg-[#0b82df] px-10 py-3 font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#076fc0] hover:shadow-[0_16px_30px_rgba(11,130,223,0.25)] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/20"
               >
                 Ver tarifas
@@ -201,16 +221,37 @@ const DashboardPage = () => {
                 Ver todas
               </button>
             </div>
-            <div className="mt-5 grid gap-5 md:grid-cols-3">
-              {news.map((item) => (
+            {blogsLoading ? (
+              <div className="mt-5 rounded-lg border border-dashed border-gray-200 p-6 text-sm text-gray-500">
+                Cargando noticias...
+              </div>
+            ) : blogs.length ? (
+              <div className="mt-5 grid gap-5 md:grid-cols-3">
+              {blogs.map((blog) => ({
+                title: blog.title,
+                tag: blog.category || "Novedad",
+                date: formatBlogDate(blog.publishedAt || blog.createdAt),
+                image: resolveBlogImageUrl(blog.imageUrl),
+                slug: blog.slug,
+              })).map((item) => (
                 <button
                   key={item.title}
                   onClick={() =>
-                    navigate(`/noticias?title=${encodeURIComponent(item.title)}`)
+                    navigate(
+                      item.slug
+                        ? `/noticias?slug=${encodeURIComponent(item.slug)}`
+                        : "/noticias",
+                    )
                   }
                   className="flex gap-4 rounded-lg border border-gray-100 p-4 text-left transition hover:-translate-y-0.5 hover:border-[#0b82df]/40 hover:shadow-[0_14px_30px_rgba(15,38,71,0.08)] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15 [&:nth-child(n+2)]:hidden md:[&:nth-child(n+2)]:flex"
                 >
-                  <img src={item.image} alt="" className="h-24 w-24 rounded-lg object-cover" />
+                  {item.image ? (
+                    <img src={item.image} alt="" className="h-24 w-24 rounded-lg object-cover" />
+                  ) : (
+                    <span className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg bg-[#eef6ff] text-[#0b82df]">
+                      <FiFileText className="h-9 w-9" />
+                    </span>
+                  )}
                   <div>
                     <span className="text-xs font-bold uppercase text-[#0b82df]">{item.tag}</span>
                     <h3 className="mt-1 font-bold text-[#07133d]">{item.title}</h3>
@@ -218,7 +259,12 @@ const DashboardPage = () => {
                   </div>
                 </button>
               ))}
-            </div>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-lg border border-dashed border-gray-200 bg-[#fbfdff] p-6 text-sm text-gray-500">
+                Aún no hay noticias publicadas.
+              </div>
+            )}
           </section>
         </div>
 
@@ -227,7 +273,7 @@ const DashboardPage = () => {
             Accesos rápidos
           </h2>
           {quickLinks.map((link) => {
-            const Icon = link.includes("facturas") ? FiFileText : link.includes("consumos") ? FiBarChart2 : link.includes("pago") ? FiCreditCard : link.includes("Notificaciones") ? FiBell : FiUser;
+            const Icon = link.includes("facturas") ? FiFileText : link.includes("consumos") ? FiBarChart2 : link.includes("contratos") ? FiFileText : FiUser;
             return (
               <button
                 key={link}

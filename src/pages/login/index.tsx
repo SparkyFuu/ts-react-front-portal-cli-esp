@@ -54,7 +54,7 @@ const LoginPage = () => {
 
     const nextRoute = result.payload.user.passwordChangeRequired
       ? "/change-password"
-      : "/area-clientes";
+      : "/dashboard";
     navigate(nextRoute);
   };
 

@@ -1,13 +1,9 @@
 import logo from "@/assets/images/ENERGYASSET-LOGO_con_slogan.png";
 import {
-  FiBarChart2,
-  FiBell,
   FiChevronDown,
-  FiClock,
   FiFileText,
   FiHome,
   FiLogOut,
-  FiMail,
   FiSettings,
   FiUser,
   FiUsers,
@@ -23,11 +19,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAppSelector } from "@/store/hooks";
 
@@ -39,27 +30,20 @@ type NavItem = {
 
 const PORTAL_NAV_ITEMS: NavItem[] = [
   { label: "Inicio", href: "/dashboard", icon: FiHome },
-  { label: "Consumo", href: "/consumo", icon: FiBarChart2 },
-  { label: "Histórico", href: "/consumos-historicos", icon: FiClock },
   { label: "Facturas", href: "/facturas", icon: FiFileText },
   // { label: "Productos", href: "/productos", icon: FiPackage },
   // { label: "Plan Amigo", href: "/plan-amigo", icon: FiGift },
-  { label: "Contacto", href: "/contacto", icon: FiMail },
   { label: "Área de clientes", href: "/area-clientes", icon: FiUsers },
 ];
 
 const STANDARD_BOTTOM_ITEMS: NavItem[] = [
   { label: "Inicio", href: "/dashboard", icon: FiHome },
-  { label: "Consumo", href: "/consumo", icon: FiBarChart2 },
-  { label: "Histórico", href: "/consumos-historicos", icon: FiClock },
   { label: "Facturas", href: "/facturas", icon: FiFileText },
   { label: "Área", href: "/area-clientes", icon: FiUser },
 ];
 
 const AREA_BOTTOM_ITEMS: NavItem[] = [
   { label: "Inicio", href: "/dashboard", icon: FiHome },
-  { label: "Consumo", href: "/consumo", icon: FiBarChart2 },
-  { label: "Histórico", href: "/consumos-historicos", icon: FiClock },
   { label: "Facturas", href: "/facturas", icon: FiFileText },
   { label: "Área", href: "/area-clientes", icon: FiUser },
 ];
@@ -158,23 +142,6 @@ const Navbar = () => {
           </nav>
 
           {!isPublic && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => navigate("/notificaciones")}
-                  className="relative hidden h-11 w-11 items-center justify-center rounded-full border border-gray-200 text-[#18233c] transition hover:border-[#0b82df] hover:bg-[#eef6ff] hover:text-[#0b82df] focus:outline-none focus:ring-4 focus:ring-[#0b82df]/15 md:flex"
-                  aria-label="Notificaciones"
-                >
-                  <FiBell className="h-5 w-5" />
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Ver notificaciones</TooltipContent>
-            </Tooltip>
-          )}
-
-          {!isPublic && (
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-3 rounded-lg outline-none transition hover:bg-[#f7fbff] focus:ring-4 focus:ring-[#0b82df]/15">
                 <span className="flex items-center gap-3 md:border-l md:border-gray-200 md:pl-5">
@@ -228,7 +195,7 @@ const Navbar = () => {
 
     </header>
     {!isPublic && (
-      <nav className="fixed inset-x-0 bottom-0 z-50 grid h-20 grid-cols-4 border-t border-gray-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,38,71,0.08)] backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-50 grid h-20 grid-cols-3 border-t border-gray-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(15,38,71,0.08)] backdrop-blur md:hidden">
         {bottomItems.map((item) => {
           const Icon = item.icon;
           return (

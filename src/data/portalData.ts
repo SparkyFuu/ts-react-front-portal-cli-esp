@@ -86,8 +86,6 @@ export const quickLinks = [
   "Mis consumos",
   "Mis datos",
   "Mis contratos",
-  "Métodos de pago",
-  "Notificaciones",
 ];
 
 export const supportCards = [

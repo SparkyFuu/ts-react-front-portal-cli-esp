@@ -5,6 +5,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { selectUser } from "@/pages/auth/features/authSlice";
+import HistoricalConsumptionPage from "@/pages/historicalConsumption";
 import {
   fetchPortalConsumption,
   fetchPortalSupplies,
@@ -449,6 +450,8 @@ const ConsumptionPage = () => {
           <FiChevronRight className="h-7 w-7 text-gray-600" />
         </button>
       </section>
+
+      <HistoricalConsumptionPage embedded />
 
       <section className="hidden border-t border-gray-200 bg-white px-6 py-8 md:grid md:grid-cols-4 md:px-16">
         {[

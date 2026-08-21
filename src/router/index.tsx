@@ -1,7 +1,6 @@
 import Layout from "@/layout";
 import ConsumptionPage from "@/pages/consumption";
 import DashboardPage from "@/pages/dashboard";
-import HistoricalConsumptionPage from "@/pages/historicalConsumption";
 import InvoicesPage from "@/pages/invoices";
 import LoginPage from "@/pages/login";
 import ChangePasswordPage from "@/pages/changePassword";
@@ -19,6 +18,7 @@ import { useAppSelector } from "@/store/hooks";
 
 const STATIC_ROUTES = [
   "/productos",
+  "/tarifas",
   "/plan-amigo",
   "/contacto",
   "/ayuda",
@@ -27,8 +27,6 @@ const STATIC_ROUTES = [
   "/servicios",
   "/profile",
   "/mas",
-  "/metodos-de-pago",
-  "/notificaciones",
   "/contratos",
 ];
 
@@ -59,7 +57,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
     return (
       <Navigate
         to={
-          auth.user.passwordChangeRequired ? "/change-password" : "/area-clientes"
+          auth.user.passwordChangeRequired ? "/change-password" : "/dashboard"
         }
         replace
       />
@@ -118,9 +116,7 @@ const AppRoutes: React.FC = () => {
           path="/consumo"
           element={
             <ProtectedRoute>
-              <Layout flush>
-                <ConsumptionPage />
-              </Layout>
+              <Navigate to="/dashboard" replace />
             </ProtectedRoute>
           }
         />
@@ -128,9 +124,7 @@ const AppRoutes: React.FC = () => {
           path="/consumos-historicos"
           element={
             <ProtectedRoute>
-              <Layout flush>
-                <HistoricalConsumptionPage />
-              </Layout>
+              <Navigate to="/dashboard" replace />
             </ProtectedRoute>
           }
         />
